@@ -1,26 +1,28 @@
 import re
-import commands
+import subprocess
 import datetime
 
 class Error(Exception):
     pass
 
-def _getstatusoutput(command, *args):
-    command = command + " ".join([commands.mkarg(arg) for arg in args])
-    return commands.getstatusoutput(command)
+def _getstatusoutput(*command):
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p.wait()
 
+    return p.returncode, p.stdout.read().rstrip("\n")
+    
 def _git_rev_parse(commit):
-    error, output = _getstatusoutput("git-rev-parse --verify", commit)
+    error, output = _getstatusoutput("git-rev-parse", "--verify", commit)
     if error:
         return None
     return output
 
 def _get_commit_date(commit):
-    error, timestamp = _getstatusoutput("git-show --quiet --pretty=format:%at", commit)
+    error, output = _getstatusoutput("git-cat-file", "commit", commit)
     if error:
-        raise Error("can't get timestamp for commit `%s'" % commit)
-    timestamp = int(timestamp)
-    
+        raise Error("can't get commit log for `%s'" % commit)
+
+    timestamp = int(re.search(r' (\d{10}) ', output).group(1))
     return datetime.date.fromtimestamp(timestamp)
     
 
@@ -29,8 +31,10 @@ def commit2version(commit):
     if val is None:
         raise Error("illegal commit `%s'" % commit)
     commit = val
-    
+
+    error = True
     error, version = _getstatusoutput("git-describe", commit)
+
     if not error:
         return version[1:]
 
@@ -55,7 +59,7 @@ def version2commit(version):
         return commit
 
     def rev_parse_shortcommit(date, shortcommit):
-        error, output = _getstatusoutput("git-rev-list --all")
+        error, output = _getstatusoutput("git-rev-list", "--all")
         if error:
             raise Error("git-rev-list --all failed")
 
