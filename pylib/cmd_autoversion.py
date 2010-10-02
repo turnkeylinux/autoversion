@@ -13,8 +13,8 @@ from autoversion import *
 
 @help.usage(__doc__)
 def usage():
-    print >> sys.stderr, "Syntax: %s <commit>" % sys.argv[0]
-    print >> sys.stderr, "Syntax: %s -r <version>" % sys.argv[0]
+    print >> sys.stderr, "Syntax: %s <commit> [ ... ]" % sys.argv[0]
+    print >> sys.stderr, "Syntax: %s -r <version> [ ... ]" % sys.argv[0]
 
 def fatal(s):
     print >> sys.stderr, "error: " + str(s)
@@ -37,11 +37,11 @@ def main():
     if not args:
         usage()
 
-    arg = args[0]
-    if opt_reverse:
-        print version2commit(arg)
-    else:
-        print commit2version(arg)
+    for arg in args:
+        if opt_reverse:
+            print version2commit(arg)
+        else:
+            print commit2version(arg)
 
 if __name__=="__main__":
     main()
