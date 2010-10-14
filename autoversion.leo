@@ -3,7 +3,7 @@
 <leo_file>
 <leo_header file_format="2" tnodes="0" max_tnode_index="51" clone_windows="0"/>
 <globals body_outline_ratio="0.5">
-	<global_window_position top="-4" left="467" height="933" width="800"/>
+	<global_window_position top="0" left="1287" height="933" width="800"/>
 	<global_log_window_position top="0" left="0" height="0" width="0"/>
 </globals>
 <preferences/>
@@ -21,7 +21,7 @@
 <v t="zaril.20101001201018.3" a="E"><vh>implementation</vh>
 <v t="zaril.20101014064439" a="M"><vh>implement basic functionality</vh></v>
 <v t="zaril.20101014064439.1" a="M"><vh>optimize autoversion</vh></v>
-<v t="zaril.20101014064538" a="TV"><vh>upgrade autoversion's autoversioning mechanism</vh></v>
+<v t="zaril.20101014064538" a="ETV"><vh>upgrade autoversion's autoversioning mechanism</vh></v>
 <v t="zaril.20101014055955"><vh>bug: bad version returned when tag doesn't start with v</vh></v>
 <v t="zaril.20101014063204"><vh>anonymous should count commits for that day</vh></v>
 <v t="zaril.20101014063204.1"><vh>allow autoversion to be used with forks</vh></v>
@@ -291,6 +291,19 @@ time autoversion -r $(autoversion $(git-rev-list --all))
 
 
 </t>
-<t tx="zaril.20101014064538"></t>
+<t tx="zaril.20101014064538">apply patches
+    autoversion.diff
+    autoversion-disabled.diff
+
+GOTCHA: circular dependency
+    verseek depends on autoversion
+    to build autoversion pool uses verseek
+
+    SOLUTION: 
+
+        create debian/changelog manually (with bogus version?) to `bootstrap' autoversion
+            install manually built binary into fabrication environment
+                rebuild autoversion with itself
+</t>
 </tnodes>
 </leo_file>
