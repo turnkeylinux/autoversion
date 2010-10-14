@@ -3,7 +3,7 @@
 <leo_file>
 <leo_header file_format="2" tnodes="0" max_tnode_index="51" clone_windows="0"/>
 <globals body_outline_ratio="0.5">
-	<global_window_position top="-3" left="470" height="951" width="800"/>
+	<global_window_position top="-3" left="604" height="951" width="666"/>
 	<global_log_window_position top="0" left="0" height="0" width="0"/>
 </globals>
 <preferences/>
@@ -22,9 +22,9 @@
 <v t="zaril.20101014064439" a="M"><vh>implement basic functionality</vh></v>
 <v t="zaril.20101014064439.1" a="M"><vh>optimize autoversion</vh></v>
 <v t="zaril.20101014064538" a="M"><vh>upgrade autoversion's autoversioning mechanism</vh></v>
-<v t="zaril.20101014055955" a="ETV"><vh>bug: bad version returned when tag doesn't start with v</vh></v>
+<v t="zaril.20101014055955" a="M"><vh>bug: bad version returned when tag doesn't start with v</vh></v>
+<v t="zaril.20101014063204.1" a="TV"><vh>allow autoversion to be used with forks</vh></v>
 <v t="zaril.20101014063204"><vh>anonymous should count commits for that day</vh></v>
-<v t="zaril.20101014063204.1"><vh>allow autoversion to be used with forks</vh></v>
 </v>
 </v>
 <v t="zaril.20101001200109.1"><vh>bugs/wishlist</vh></v>
@@ -241,7 +241,36 @@ These two steps (comparing and removing initial non-digit strings and initial di
 Note that the purpose of epochs is to allow us to leave behind mistakes in version numbering, and to cope with situations where the version numbering scheme changes. It is not intended to cope with version numbers containing strings of letters which the package management system cannot interpret (such as ALPHA or pre-), or with silly orderings (the author of this manual has heard of a package whose versions went 1.1, 1.2, 1.3, 1, 2.1, 2.2, 2 and so forth). </t>
 <t tx="zaril.20101014055955"></t>
 <t tx="zaril.20101014063204"></t>
-<t tx="zaril.20101014063204.1">replace - with ~</t>
+<t tx="zaril.20101014063204.1">IDEAS
+    replace - with +
+        why not ~?
+            according to DPM ~ is illegal in versions
+                allowed: alphanumerics . + and -
+    
+            also ~ &gt; . (in python, but not according to dpkg --compare-versions)
+    
+    debian revision should only be for forked projects 
+        non-forked projects shouldn't have debian revisions
+
+example tags
+    1.0
+        1.0+13+gff3c39c
+
+    1.0-3turnkey
+        1.0-3turnkey+13+gff3c39c
+
+anonymous tags
+    0+2010.10.14+d3fa6327
+
+logic
+    commit -&gt; version
+        if git-describe returns a matching pattern:
+            replace the two last - with +
+    
+    version -&gt; commit
+        if we match the pattern:
+            replace two last + with -
+            pass to git-describe</t>
 <t tx="zaril.20101014064439"></t>
 <t tx="zaril.20101014064439.1">time autoversion -r $(autoversion $(git-rev-list --all)) &gt; /dev/null
 	down to 1.32 for pyproject

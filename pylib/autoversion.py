@@ -40,20 +40,26 @@ def commit2version(commit):
     error, version = _getstatusoutput("git-describe", commit)
 
     if not error:
+        version = re.sub(r'(-\d+-g[0-9a-f]{7})$',
+                         lambda m: m.group(1).replace("-", "+"),
+                         version)
         if version.startswith("v"):
             return version[1:]
         return version
 
     date = _get_commit_date(commit)
-    return "0-%d.%d.%d-%s" % (date.year, date.month, date.day, commit[:8])
+    return "0+%d.%d.%d+%s" % (date.year, date.month, date.day, commit[:8])
 
 def version2commit(version):
     # easy street if its a version from git-describe
+    version = re.sub(r'(\+\d+\+g[0-9a-f]{7})$',
+                     lambda m: m.group(1).replace("+", "-"),
+                     version)
     commit = _git_rev_parse("v" + version)
     if commit:
         return commit
 
-    m = re.match(r'^0-(\d\d\d\d)\.(\d\d?)\.(\d\d?)-([0-9a-f]{8})$', version)
+    m = re.match(r'^0\+(\d\d\d\d)\.(\d\d?)\.(\d\d?)\+([0-9a-f]{8})$', version)
     if not m:
         commit = _git_rev_parse(version)
         if commit:
