@@ -40,7 +40,9 @@ def commit2version(commit):
     error, version = _getstatusoutput("git-describe", commit)
 
     if not error:
-        return version[1:]
+        if version.startswith("v"):
+            return version[1:]
+        return version
 
     date = _get_commit_date(commit)
     return "0-%d.%d.%d-%s" % (date.year, date.month, date.day, commit[:8])
@@ -50,9 +52,13 @@ def version2commit(version):
     commit = _git_rev_parse("v" + version)
     if commit:
         return commit
-    
+
     m = re.match(r'^0-(\d\d\d\d)\.(\d\d?)\.(\d\d?)-([0-9a-f]{8})$', version)
     if not m:
+        commit = _git_rev_parse(version)
+        if commit:
+            return commit
+
         raise Error("illegal version `%s'" % version)
 
     year, month, day, shortcommit = m.groups()
