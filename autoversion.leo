@@ -3,7 +3,7 @@
 <leo_file>
 <leo_header file_format="2" tnodes="0" max_tnode_index="51" clone_windows="0"/>
 <globals body_outline_ratio="0.5">
-	<global_window_position top="0" left="604" height="951" width="666"/>
+	<global_window_position top="-15" left="513" height="951" width="666"/>
 	<global_log_window_position top="0" left="0" height="0" width="0"/>
 </globals>
 <preferences/>
@@ -28,7 +28,8 @@
 <v t="zaril.20101016095956"><vh>bench.py</vh></v>
 </v>
 <v t="zaril.20101016124735"><vh>explore: can we trust git-describe?</vh></v>
-<v t="zaril.20101016123650" a="ETV"><vh>optimization: precache commits/times map</vh></v>
+<v t="zaril.20101016123650" a="E"><vh>optimization: precache commits/times map</vh></v>
+<v t="zaril.20101016140042" a="TV"><vh>optimization: precache commits/describes</vh></v>
 <v t="zaril.20101016123709"><vh>release new autoversion</vh></v>
 </v>
 </v>
@@ -461,6 +462,31 @@ merge: v1.0-3-gbfc8e3d
     from the merge: 
         git-describe HEAD^1 == v1.0-1-ga7e4171
         git-describe HEAD^2 == v1.0-1-ge9f4be1
+</t>
+<t tx="zaril.20101016140042">logic
+    use git-describe $(git-rev-list --all) to build a map of valid
+        describes -&gt; commits
+            and vice versa
+        commits -&gt; describes
+
+before optimization
+	covin 3.414 (mostly covered by git-describe)
+		commit2version: 1.818
+		version2commit: 1.635
+		
+	test 5.01 (mostly untagged)
+		commit2version: 2.48
+		version2commit: 2.48
+
+after optimization
+	covin 0.65 (mostly covered by git-describe) - 5x improvement
+		commit2version: 0.138
+		version2commit: 0.509
+		
+	test 2.16 (mostly untagged) - 2.3x improvement
+		commit2version: 0.161
+		version2commit: 1.3
+
 </t>
 </tnodes>
 </leo_file>

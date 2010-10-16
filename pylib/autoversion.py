@@ -32,7 +32,7 @@ class Autoversion:
     Error = Error
 
     @staticmethod
-    def _get_commit_times_map():
+    def _get_map_commits_times():
         output = _getoutput("git-rev-list", "--pretty=format:%at", "--all")
 
         d = {}
@@ -43,35 +43,65 @@ class Autoversion:
 
             d[commit] = timestamp
         return d
-    
+
+    @staticmethod
+    def _get_describes_commits():
+        revs = _getoutput("git-rev-list", "--all").split("\n")
+
+        command = ["git-describe"]
+        command.extend(revs)
+
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+
+        describes = p.stdout.read().rstrip("\n").split("\n")
+        return zip(describes, revs)
+
     def __init__(self, precache=False):
         if precache:
-            self.commit_times_map = self._get_commit_times_map()
+            self.map_commits_times = self._get_map_commits_times()
+
+            describes_commits = self._get_describes_commits()
+            d = dict(describes_commits)
+            self.map_describes_commits = d
+            self.map_commits_describes = dict(zip(d.values(), d.keys()))
         else:
-            self.commit_times_map = None
+            self.map_commits_times = None
+            self.map_commits_describes = None
+            self.map_describes_commits = None
+
+        self.precache = precache
 
     def _rev_parse_shortcommit(self, timestamp, shortcommit):
-        if not self.commit_times_map is None:
-            self.commit_times_map = self._get_commit_times_map()
+        if not self.map_commits_times is None:
+            self.map_commits_times = self._get_map_commits_times()
             
-        for commit, commit_timestamp in self.commit_times_map.items():
+        for commit, commit_timestamp in self.map_commits_times.items():
             if commit.startswith(shortcommit) and commit_timestamp == timestamp:
                 return commit
 
         raise Error("no matching commits")
 
+    def _lookup_commit_by_describe(self, describe):
+        if self.precache:
+            commit = self.map_describes_commits.get(describe)
+        else:
+            commit = _git_rev_parse(describe)
+        return commit
+    
     def version2commit(self, version):
         # easy street if its a version from git-describe
         version = re.sub(r'(\+\d+\+g[0-9a-f]{7})$',
                          lambda m: m.group(1).replace("+", "-"),
                          version)
-        commit = _git_rev_parse("v" + version)
+
+        commit = self._lookup_commit_by_describe("v" + version)
         if commit:
             return commit
-
+        
         m = re.match(r'^0\+(\d\d\d\d)\.(\d\d?)\.(\d\d?)\+(\d\d?):(\d\d?):(\d\d?)\+([0-9a-f]{8})$', version)
         if not m:
-            commit = _git_rev_parse(version)
+            commit = self._lookup_commit_by_describe(version)
             if commit:
                 return commit
 
@@ -88,24 +118,38 @@ class Autoversion:
         return self._rev_parse_shortcommit(timestamp, shortcommit)
     
     def _get_commit_time(self, commit):
-        if self.commit_times_map:
-            return self.commit_times_map[commit]
+        if self.map_commits_times:
+            return self.map_commits_times[commit]
         
         output = _getoutput("git-cat-file", "commit", commit)
 
         timestamp = int(re.search(r' (\d{10}) ', output).group(1))
         return timestamp
 
-    def commit2version(self, commit):
-        val = _git_rev_parse(commit)
-        if val is None:
-            raise Error("illegal commit `%s'" % commit)
-        commit = val
+    def _lookup_describe_by_commit(self, commit):
+        if self.precache:
+            return self.map_commits_describes.get(commit)
 
-        error = True
-        error, version = _getstatusoutput("git-describe", commit)
-
+        error, describe = _getstatusoutput("git-describe", commit)
         if not error:
+            return describe
+
+        return None
+
+    def commit2version(self, commit):
+        version = None
+        if self.precache:
+            version = self._lookup_describe_by_commit(commit)
+            
+        if version is None:
+            val = _git_rev_parse(commit)
+            if val is None:
+                raise Error("illegal commit `%s'" % commit)
+            commit = val
+
+            version = self._lookup_describe_by_commit(commit)
+
+        if version:
             version = re.sub(r'(-\d+-g[0-9a-f]{7})$',
                              lambda m: m.group(1).replace("-", "+"),
                              version)
@@ -117,7 +161,6 @@ class Autoversion:
         return "0+%d.%d.%d+%02d:%02d:%02d+%s" % (tm.tm_year, tm.tm_mon, tm.tm_mday,
                                                  tm.tm_hour, tm.tm_min, tm.tm_sec,
                                                  commit[:8])
-
     
 # convenience functions
 def version2commit(version):
