@@ -6,7 +6,6 @@ from calendar import timegm
 class Error(Exception):
     pass
 
-
 def _getstatusoutput(*command):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     p.wait()
@@ -25,18 +24,37 @@ def _git_rev_parse(commit):
 
 class Autoversion:
     Error = Error
-    
-    def __init__(self, precache=0):
-        pass
 
     @staticmethod
-    def _get_commit_gmtime(commit):
-        error, output = _getstatusoutput("git-cat-file", "commit", commit)
+    def _get_commit_times_map():
+        error, output = _getstatusoutput("git-rev-list", "--pretty=format:%at", "--all")
         if error:
-            raise Error("can't get commit log for `%s'" % commit)
+            raise Error("git-rev-list failed")
 
-        timestamp = int(re.search(r' (\d{10}) ', output).group(1))
-        return gmtime(timestamp)
+        d = {}
+        entries = ( entry.strip().split("\n") for entry in output.split("commit ")[1:] )
+        for entry in entries:
+            commit = entry[0]
+            timestamp = int(entry[1])
+
+            d[commit] = timestamp
+        return d
+    
+    def __init__(self, precache=False):
+        if precache:
+            self.commit_times_map = self._get_commit_times_map()
+        else:
+            self.commit_times_map = None
+
+    def _rev_parse_shortcommit(self, timestamp, shortcommit):
+        if not self.commit_times_map is None:
+            self.commit_times_map = self._get_commit_times_map()
+            
+        for commit, commit_timestamp in self.commit_times_map.items():
+            if commit.startswith(shortcommit) and commit_timestamp == timestamp:
+                return commit
+
+        raise Error("no matching commits")
 
     def version2commit(self, version):
         # easy street if its a version from git-describe
@@ -65,20 +83,16 @@ class Autoversion:
         timestamp = timegm((int(year), int(month), int(day), int(hour), int(min), int(sec)))
         return self._rev_parse_shortcommit(timestamp, shortcommit)
     
-    @staticmethod
-    def _rev_parse_shortcommit(timestamp, shortcommit):
-        error, output = _getstatusoutput("git-rev-list", "--pretty=format:%at", "--all")
+    def _get_commit_time(self, commit):
+        if self.commit_times_map:
+            return self.commit_times_map[commit]
+        
+        error, output = _getstatusoutput("git-cat-file", "commit", commit)
         if error:
-            raise Error("git-rev-list failed")
+            raise Error("can't get commit log for `%s'" % commit)
 
-        for entry in output.split("commit ")[1:]:
-            commit, commit_timestamp = entry.strip().split("\n")
-            commit_timestamp = int(commit_timestamp)
-
-            if commit.startswith(shortcommit) and commit_timestamp == timestamp:
-                return commit
-
-        raise Error("no matching commits")
+        timestamp = int(re.search(r' (\d{10}) ', output).group(1))
+        return timestamp
 
     def commit2version(self, commit):
         val = _git_rev_parse(commit)
@@ -97,7 +111,7 @@ class Autoversion:
                 return version[1:]
             return version
 
-        tm = self._get_commit_gmtime(commit)
+        tm = gmtime(self._get_commit_time(commit))
         return "0+%d.%d.%d+%02d:%02d:%02d+%s" % (tm.tm_year, tm.tm_mon, tm.tm_mday,
                                                  tm.tm_hour, tm.tm_min, tm.tm_sec,
                                                  commit[:8])

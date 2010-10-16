@@ -24,9 +24,12 @@
 <v t="zaril.20101014064538" a="M"><vh>upgrade autoversion's autoversioning mechanism</vh></v>
 <v t="zaril.20101014055955" a="M"><vh>bug: bad version returned when tag doesn't start with v</vh></v>
 <v t="zaril.20101014063204.1" a="EM"><vh>allow autoversion to be used with forks</vh></v>
-<v t="zaril.20101014063204" a="ETV"><vh>add revision count to untagged autoversions</vh>
+<v t="zaril.20101014063204"><vh>add revision count to untagged autoversions</vh>
 <v t="zaril.20101016095956"><vh>bench.py</vh></v>
 </v>
+<v t="zaril.20101016124735"><vh>explore: can we trust git-describe?</vh></v>
+<v t="zaril.20101016123650" a="ETV"><vh>optimization: precache commits/times map</vh></v>
+<v t="zaril.20101016123709"><vh>release new autoversion</vh></v>
 </v>
 </v>
 <v t="zaril.20101001200109.1"><vh>bugs/wishlist</vh></v>
@@ -263,21 +266,8 @@ Note that the purpose of epochs is to allow us to leave behind mistakes in versi
             0+2010.10.16+4ca0d043 -&gt; 0+2010.10.16+08:29:44+4ca0d043
                 looks better
 
-          
-    optimizations
-        motivation - autoversion will be the bottleneck for verseek -l in git-single
-
-        we'll need to turn autoversion.py into a class
-            store internal caches
-
-        optimize operation for multiple lookups by storing the rev-list internally
-            if we store rev-list in a hash -&gt; even faster lookups
-    
-        while we're at it, we can optimize get_commit_date() for multiple lookups too
-
     what about merges?
         git-rev-list topo-order
-
 
     0+2010.10.16+4ca0d043 -&gt; 0+23+2010.10.16+4ca0d043
     
@@ -299,6 +289,10 @@ git-rev-list --pretty=format:%at HEAD
 
 parse with
     dict([ entry.strip().split("\n") for entry in commands.getoutput("git-rev-list --pretty=format:%at HEAD").split("commit ")[1:]  ])
+
+rev_parse_shortcommit
+    5fa
+    66a
 </t>
 <t tx="zaril.20101014063204.1">IDEAS
     replace - with +
@@ -416,6 +410,57 @@ def b():
 
 bench(a, 100)
 bench(b, 100)
+</t>
+<t tx="zaril.20101016123650">SUMMARY
+    motivation - autoversion will be the bottleneck for verseek -l in git-single
+
+IDEAS
+    precache commits/timestamps
+        save command execution overhead
+
+    turn off precaching for non-multiples?
+
+    we'll need to turn autoversion.py into a class
+        store internal caches
+
+BENCHMARKS
+
+
+before optimization
+	covin 3.723 (mostly covered by git-describe)
+		commit2version: 2.194
+		version2commit: 1.604
+		
+	test 6.084 (mostly untagged)
+		commit2version: 3.76
+		version2commit: 2.49
+
+after optimization
+	covin 3.414 (mostly covered by git-describe)
+		commit2version: 1.818
+		version2commit: 1.635
+		
+	test 5.01 (mostly untagged)
+		commit2version: 2.48
+		version2commit: 2.48
+
+	time autoversion -r $(autoversion $(git-rev-list --all)) &gt; /dev/null
+</t>
+<t tx="zaril.20101016123709"></t>
+<t tx="zaril.20101016124735">SUMMARY:
+    yes git-describe does the right thing
+
+E: what happens if in two separate branches we make one commit after a tag?
+
+    will the old git-describe still be parseable after a merge?
+    will it still evaluate to the same git-describe?
+
+new v1.0-1-ga7e4171
+master v1.0-1-ge9f4be1
+merge: v1.0-3-gbfc8e3d
+    from the merge: 
+        git-describe HEAD^1 == v1.0-1-ga7e4171
+        git-describe HEAD^2 == v1.0-1-ge9f4be1
 </t>
 </tnodes>
 </leo_file>
