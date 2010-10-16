@@ -12,6 +12,12 @@ def _getstatusoutput(*command):
 
     return p.returncode, p.stdout.read().rstrip("\n")
 
+def _getoutput(*command):
+    error, output = _getstatusoutput(*command)
+    if error:
+        raise Error("command failed with exitcode=%d: %s" % (error, " ".join(command)))
+    return output
+
 def _git_rev_parse(commit):
     # skip expensive git-rev-parse if given a full commit id
     if re.match('[0-9a-f]{40}$', commit):
@@ -27,9 +33,7 @@ class Autoversion:
 
     @staticmethod
     def _get_commit_times_map():
-        error, output = _getstatusoutput("git-rev-list", "--pretty=format:%at", "--all")
-        if error:
-            raise Error("git-rev-list failed")
+        output = _getoutput("git-rev-list", "--pretty=format:%at", "--all")
 
         d = {}
         entries = ( entry.strip().split("\n") for entry in output.split("commit ")[1:] )
@@ -87,9 +91,7 @@ class Autoversion:
         if self.commit_times_map:
             return self.commit_times_map[commit]
         
-        error, output = _getstatusoutput("git-cat-file", "commit", commit)
-        if error:
-            raise Error("can't get commit log for `%s'" % commit)
+        output = _getoutput("git-cat-file", "commit", commit)
 
         timestamp = int(re.search(r' (\d{10}) ', output).group(1))
         return timestamp
