@@ -1,6 +1,7 @@
 import re
 import subprocess
-import datetime
+from time import gmtime
+from calendar import timegm
 
 class Error(Exception):
     pass
@@ -21,15 +22,14 @@ def _git_rev_parse(commit):
         return None
     return output
 
-def _get_commit_date(commit):
+def _get_commit_gmtime(commit):
     error, output = _getstatusoutput("git-cat-file", "commit", commit)
     if error:
         raise Error("can't get commit log for `%s'" % commit)
 
     timestamp = int(re.search(r' (\d{10}) ', output).group(1))
-    return datetime.date.fromtimestamp(timestamp)
+    return gmtime(timestamp)
     
-
 def commit2version(commit):
     val = _git_rev_parse(commit)
     if val is None:
@@ -47,8 +47,24 @@ def commit2version(commit):
             return version[1:]
         return version
 
-    date = _get_commit_date(commit)
-    return "0+%d.%d.%d+%s" % (date.year, date.month, date.day, commit[:8])
+    tm = _get_commit_gmtime(commit)
+    return "0+%d.%d.%d+%02d:%02d:%02d+%s" % (tm.tm_year, tm.tm_mon, tm.tm_mday,
+                                             tm.tm_hour, tm.tm_min, tm.tm_sec,
+                                             commit[:8])
+
+def _rev_parse_shortcommit(timestamp, shortcommit):
+    error, output = _getstatusoutput("git-rev-list", "--pretty=format:%at", "--all")
+    if error:
+        raise Error("git-rev-list failed")
+
+    for entry in output.split("commit ")[1:]:
+        commit, commit_timestamp = entry.strip().split("\n")
+        commit_timestamp = int(commit_timestamp)
+
+        if commit.startswith(shortcommit) and commit_timestamp == timestamp:
+            return commit
+
+    raise Error("no matching commits")
 
 def version2commit(version):
     # easy street if its a version from git-describe
@@ -59,7 +75,7 @@ def version2commit(version):
     if commit:
         return commit
 
-    m = re.match(r'^0\+(\d\d\d\d)\.(\d\d?)\.(\d\d?)\+([0-9a-f]{8})$', version)
+    m = re.match(r'^0\+(\d\d\d\d)\.(\d\d?)\.(\d\d?)\+(\d\d?):(\d\d?):(\d\d?)\+([0-9a-f]{8})$', version)
     if not m:
         commit = _git_rev_parse(version)
         if commit:
@@ -67,28 +83,13 @@ def version2commit(version):
 
         raise Error("illegal version `%s'" % version)
 
-    year, month, day, shortcommit = m.groups()
+    year, month, day, hour, min, sec, shortcommit = m.groups()
 
     # if the commit is not ambigious - we're ok
     commit = _git_rev_parse(shortcommit)
     if commit:
         return commit
 
-    def rev_parse_shortcommit(date, shortcommit):
-        error, output = _getstatusoutput("git-rev-list", "--all")
-        if error:
-            raise Error("git-rev-list --all failed")
-
-        revs = [ rev for rev in output.split("\n")
-                 if rev.startswith(shortcommit) and date == _get_commit_date(rev) ]
-
-        if not revs:
-            raise Error("no matching commits")
-
-        if len(revs) > 1:
-            raise Error("more than one commit matches shortcommit and date")
-
-        return revs[0]
-
-    return rev_parse_shortcommit(datetime.date(year, month, day), shortcommit)
+    timestamp = timegm((int(year), int(month), int(day), int(hour), int(min), int(sec)))
+    return _rev_parse_shortcommit(timestamp, shortcommit)
 

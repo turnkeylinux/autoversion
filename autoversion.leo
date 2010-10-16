@@ -3,7 +3,7 @@
 <leo_file>
 <leo_header file_format="2" tnodes="0" max_tnode_index="51" clone_windows="0"/>
 <globals body_outline_ratio="0.5">
-	<global_window_position top="-3" left="604" height="951" width="666"/>
+	<global_window_position top="0" left="604" height="951" width="666"/>
 	<global_log_window_position top="0" left="0" height="0" width="0"/>
 </globals>
 <preferences/>
@@ -23,8 +23,10 @@
 <v t="zaril.20101014064439.1" a="M"><vh>optimize autoversion</vh></v>
 <v t="zaril.20101014064538" a="M"><vh>upgrade autoversion's autoversioning mechanism</vh></v>
 <v t="zaril.20101014055955" a="M"><vh>bug: bad version returned when tag doesn't start with v</vh></v>
-<v t="zaril.20101014063204.1" a="TV"><vh>allow autoversion to be used with forks</vh></v>
-<v t="zaril.20101014063204"><vh>anonymous should count commits for that day</vh></v>
+<v t="zaril.20101014063204.1" a="EM"><vh>allow autoversion to be used with forks</vh></v>
+<v t="zaril.20101014063204" a="ETV"><vh>add revision count to untagged autoversions</vh>
+<v t="zaril.20101016095956"><vh>bench.py</vh></v>
+</v>
 </v>
 </v>
 <v t="zaril.20101001200109.1"><vh>bugs/wishlist</vh></v>
@@ -240,7 +242,64 @@ These two steps (comparing and removing initial non-digit strings and initial di
 
 Note that the purpose of epochs is to allow us to leave behind mistakes in version numbering, and to cope with situations where the version numbering scheme changes. It is not intended to cope with version numbers containing strings of letters which the package management system cannot interpret (such as ALPHA or pre-), or with silly orderings (the author of this manual has heard of a package whose versions went 1.1, 1.2, 1.3, 1, 2.1, 2.2, 2 and so forth). </t>
 <t tx="zaril.20101014055955"></t>
-<t tx="zaril.20101014063204"></t>
+<t tx="zaril.20101014063204">IDEAS
+    revision counts
+        calculate revision count for that day
+    
+        calculate revision count for all commits
+            add global revision count to each anonymous version
+                0+2010.10.16+4ca0d043 -&gt; 0+23+2010.10.16+4ca0d043
+
+        GOTCHA: you can't assign reliable index numbers to commits in a distributed VCS
+            post-merge the autoversions would suddenly be different
+        
+    increase precision of timestamp? 
+        add numeric timestamp
+            1192522383.2392991
+
+            0+2010.10.16+4ca0d043 -&gt; 0+2010.10.16+1192522383.23+4ca0d043
+
+        add readable precision
+            0+2010.10.16+4ca0d043 -&gt; 0+2010.10.16+08:29:44+4ca0d043
+                looks better
+
+          
+    optimizations
+        motivation - autoversion will be the bottleneck for verseek -l in git-single
+
+        we'll need to turn autoversion.py into a class
+            store internal caches
+
+        optimize operation for multiple lookups by storing the rev-list internally
+            if we store rev-list in a hash -&gt; even faster lookups
+    
+        while we're at it, we can optimize get_commit_date() for multiple lookups too
+
+    what about merges?
+        git-rev-list topo-order
+
+
+    0+2010.10.16+4ca0d043 -&gt; 0+23+2010.10.16+4ca0d043
+    
+E: git-rev-list --topo-order post merging
+    the `index' would change following a merge
+
+Q: how do I get timezone-neutral timestamps?
+A: the unixtimestamp is always neutral time.time() 
+
+Q: how do I turn this back to a timestamp?
+A: calendar.timegm is the inverse of time.gmtime
+        e.g., 
+            calendar.timegm(time.gmtime()[:6])
+
+    so simply parse the autoversion to a tuple and push it into calendar.timegm
+        0+2010.10.16+08:29:44+4ca0d043
+
+git-rev-list --pretty=format:%at HEAD
+
+parse with
+    dict([ entry.strip().split("\n") for entry in commands.getoutput("git-rev-list --pretty=format:%at HEAD").split("commit ")[1:]  ])
+</t>
 <t tx="zaril.20101014063204.1">IDEAS
     replace - with +
         why not ~?
@@ -333,6 +392,30 @@ GOTCHA: circular dependency
         create debian/changelog manually (with bogus version?) to `bootstrap' autoversion
             install manually built binary into fabrication environment
                 rebuild autoversion with itself
+</t>
+<t tx="zaril.20101016095956">import os
+import time
+
+def bench(f, howmany):
+    start = time.time()
+    for i in xrange(howmany):
+        f()
+    end = time.time()
+
+    elapsed = end - start
+
+    print "%d runs in %.4f seconds (%.2f per/sec)" % (howmany, elapsed,
+                                                      howmany / elapsed)
+
+  
+def a():
+    os.system("git-rev-list --after=2010-10-16 --before=2010-10-17 HEAD &gt; /dev/null")
+
+def b():
+    os.system("git-rev-list HEAD &gt; /dev/null")
+
+bench(a, 100)
+bench(b, 100)
 </t>
 </tnodes>
 </leo_file>
