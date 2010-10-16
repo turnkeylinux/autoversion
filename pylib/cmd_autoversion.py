@@ -9,7 +9,7 @@ import sys
 import help
 import getopt
 
-from autoversion import *
+from autoversion import Autoversion
 
 @help.usage(__doc__)
 def usage():
@@ -37,11 +37,13 @@ def main():
     if not args:
         usage()
 
+    av = Autoversion(precache=len(args) > 1)
+    
     for arg in args:
         if opt_reverse:
-            print version2commit(arg)
+            print av.version2commit(arg)
         else:
-            print commit2version(arg)
+            print av.commit2version(arg)
 
 if __name__=="__main__":
     main()
