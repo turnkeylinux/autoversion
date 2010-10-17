@@ -1,0 +1,9 @@
+v0.9.1 Release Notes
+====================
+
+* refactored autoversion heavily for increased readability/maintainability
+
+* implemented precaching optimizations (20X improvement for batch lookups)
+
+  By eliminating nearly all per-lookup execution overhead, dramatically
+  increases the improvement of batch lookups.
