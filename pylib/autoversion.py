@@ -120,11 +120,14 @@ class Timestamps:
             yield commit, timestamp
 
     def __init__(self, precache=False):
+        self.precache = {}
+        self.precache_commits = []
         if precache:
-            self.precache = dict(self._get_commit_timestamps())
-        else:
-            self.precache = {}
-            
+            commit_timestamps = self._get_commit_timestamps()
+            for commit, timestamp in commit_timestamps:
+                self.precache[commit] = timestamp
+                self.precache_commits.append(commit)
+                
     def commit2timestamp(self, commit):
         if self.precache:
             return self.precache[commit]
@@ -138,7 +141,7 @@ class Autoversion:
 
     def __init__(self, precache=False):
         self.timestamps = Timestamps(precache)
-        precache_commits=self.timestamps.precache.keys()
+        precache_commits = self.timestamps.precache_commits
         
         self.shorts = Shorts(precache, precache_commits=precache_commits)
         self.describes = Describes(precache, precache_commits=precache_commits)
