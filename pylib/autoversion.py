@@ -42,9 +42,9 @@ class Describes:
         describes = p.stdout.read().rstrip("\n").split("\n")
         return zip(describes, commits)
 
-    def __init__(self, precache=False, commits=None):
+    def __init__(self, precache=False, precache_commits=None):
         if precache:
-            describes_commits = self._get_describes_commits(commits)
+            describes_commits = self._get_describes_commits(precache_commits)
             self.map_describes_commits = dict(describes_commits)
             self.map_commits_describes = dict(( (v[1], v[0]) for v in describes_commits ))
         else:
@@ -98,12 +98,13 @@ class Timestamps:
         timestamp = int(re.search(r' (\d{10}) ', output).group(1))
         return timestamp
 
+    
 class Autoversion:
     Error = Error
 
     def __init__(self, precache=False):
         self.timestamps = Timestamps(precache)
-        self.describes = Describes(precache, commits=self.timestamps.precache.keys())
+        self.describes = Describes(precache, precache_commits=self.timestamps.precache.keys())
 
     def _resolve_ambigious_shortcommit(self, timestamp, shortcommit):
         if not self.map_commits_times is None:
