@@ -143,12 +143,12 @@ class Autoversion:
         self.shorts = Shorts(precache, precache_commits=precache_commits)
         self.describes = Describes(precache, precache_commits=precache_commits)
 
-    def _resolve_ambigious_shortcommit(self, timestamp, shortcommit):
-        if not self.map_commits_times is None:
-            self.map_commits_times = self._get_map_commits_times()
+    def _resolve_ambigious_shortcommit(self, short, timestamp):
+        if not self.timestamps.precache:
+            self.timestamps = Timestamps(precache=True)
             
-        for commit, commit_timestamp in self.map_commits_times.items():
-            if commit.startswith(shortcommit) and commit_timestamp == timestamp:
+        for commit, commit_timestamp in self.timestamps.precache.items():
+            if commit.startswith(short) and commit_timestamp == timestamp:
                 return commit
 
         raise Error("no matching commits")
@@ -179,7 +179,7 @@ class Autoversion:
             return commit
 
         timestamp = timegm((int(year), int(month), int(day), int(hour), int(min), int(sec)))
-        return self._resolve_ambigious_shortcommit(timestamp, shortcommit)
+        return self._resolve_ambigious_shortcommit(shortcommit, timestamp)
     
     def commit2version(self, commit):
         version = self.describes.commit2describe(commit)
