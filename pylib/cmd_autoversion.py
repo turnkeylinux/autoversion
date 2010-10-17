@@ -4,6 +4,12 @@
 Options:
   -r --reverse		map version to git commit
 
+Example usage:
+
+  autoversion HEAD                      # print latest version
+  autoversion -r v1.0                   # print commit of version v1.0
+  autoversion $(git-rev-list --all)     # print all versions
+
 """
 import re
 import sys
