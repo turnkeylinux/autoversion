@@ -1,0 +1,20 @@
+v0.9.0 Release Notes
+====================
+
+Important, backwards-incompatible version format changes:
+
+A) replaced `-' in autoversions with `+'
+
+   This allows correct handling of autoversions by package manager
+   because otherwise the debian_revision is calculated incorrectly.
+
+   Enables autoversioning for forked packages to work correctly.
+
+B) fixed untagged autoversions to include a more specific timestamp
+
+   Day-level resolution is not specific enough to differentiate
+   which of multiple autoversions created in a single day is the newest.
+
+Examples:
+	0-2010.10.2-8284f414 -> 0+2010.10.1+23:48:38+8284f414
+	0.8.0-1-gd0e8365     -> 0.8.0+1+gd0e8365

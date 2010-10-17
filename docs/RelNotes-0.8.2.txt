@@ -1,0 +1,8 @@
+v0.8.2 Release Notes
+====================
+
+* created project Leo
+* fixed debian packaging dependencies, description
+* upgraded autoversion's autoversioning mechanism
+* applied pyproject-related patches
+* bugfix: allow version tags that don't start with v

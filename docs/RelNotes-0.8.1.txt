@@ -1,0 +1,9 @@
+v0.8.1 Release Notes
+====================
+
+optimizations (4X improvement for batch lookups):
+
+* allowed multiple arguments on command line
+  This eliminates significant execution overhead.
+
+* implemented several minor optimizations
