@@ -28,6 +28,52 @@ def _git_rev_parse(commit):
         return None
     return output
 
+class Describes:
+    """Class that maps git describes to git commits and vice versa"""
+    
+    @staticmethod
+    def _get_describes_commits(revs=None):
+        if revs is None:
+            revs = _getoutput("git-rev-list", "--all").split("\n")
+
+        command = ["git-describe"]
+        command.extend(revs)
+
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.wait()
+
+        describes = p.stdout.read().rstrip("\n").split("\n")
+        return zip(describes, revs)
+
+    def __init__(self, precache=False, revs=None):
+
+        if precache:
+            describes_commits = self._get_describes_commits(revs)
+            self.map_describes_commits = dict(describes_commits)
+            self.map_commits_describes = dict(( (v[1], v[0]) for v in describes_commits ))
+        else:
+            self.map_describes_commits = None
+            self.map_commits_describes = None
+
+        self.precache = precache
+    
+    def describe2commit(self, describe):
+        if self.precache:
+            commit = self.map_describes_commits.get(describe)
+        else:
+            commit = _git_rev_parse(describe)
+        return commit
+
+    def commit2describe(self, commit):
+        if self.precache:
+            return self.map_commits_describes.get(commit)
+
+        error, describe = _getstatusoutput("git-describe", commit)
+        if not error:
+            return describe
+
+        return None
+
 class Autoversion:
     Error = Error
 
@@ -44,31 +90,12 @@ class Autoversion:
             d[commit] = timestamp
         return d
 
-    @staticmethod
-    def _get_describes_commits():
-        revs = _getoutput("git-rev-list", "--all").split("\n")
-
-        command = ["git-describe"]
-        command.extend(revs)
-
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.wait()
-
-        describes = p.stdout.read().rstrip("\n").split("\n")
-        return zip(describes, revs)
-
     def __init__(self, precache=False):
+        self.describes = Describes(precache)
         if precache:
             self.map_commits_times = self._get_map_commits_times()
-
-            describes_commits = self._get_describes_commits()
-            d = dict(describes_commits)
-            self.map_describes_commits = d
-            self.map_commits_describes = dict(zip(d.values(), d.keys()))
         else:
             self.map_commits_times = None
-            self.map_commits_describes = None
-            self.map_describes_commits = None
 
         self.precache = precache
 
@@ -81,13 +108,6 @@ class Autoversion:
                 return commit
 
         raise Error("no matching commits")
-
-    def _lookup_commit_by_describe(self, describe):
-        if self.precache:
-            commit = self.map_describes_commits.get(describe)
-        else:
-            commit = _git_rev_parse(describe)
-        return commit
     
     def version2commit(self, version):
         # easy street if its a version from git-describe
@@ -95,13 +115,13 @@ class Autoversion:
                          lambda m: m.group(1).replace("+", "-"),
                          version)
 
-        commit = self._lookup_commit_by_describe("v" + version)
+        commit = self.describes.describe2commit("v" + version)
         if commit:
             return commit
         
         m = re.match(r'^0\+(\d\d\d\d)\.(\d\d?)\.(\d\d?)\+(\d\d?):(\d\d?):(\d\d?)\+([0-9a-f]{8})$', version)
         if not m:
-            commit = self._lookup_commit_by_describe(version)
+            commit = self.describes.describe2commit(version)
             if commit:
                 return commit
 
@@ -126,29 +146,14 @@ class Autoversion:
         timestamp = int(re.search(r' (\d{10}) ', output).group(1))
         return timestamp
 
-    def _lookup_describe_by_commit(self, commit):
-        if self.precache:
-            return self.map_commits_describes.get(commit)
-
-        error, describe = _getstatusoutput("git-describe", commit)
-        if not error:
-            return describe
-
-        return None
-
     def commit2version(self, commit):
-        version = None
-        if self.precache:
-            version = self._lookup_describe_by_commit(commit)
-            
-        if version is None:
-            val = _git_rev_parse(commit)
-            if val is None:
-                raise Error("illegal commit `%s'" % commit)
-            commit = val
-
-            version = self._lookup_describe_by_commit(commit)
-
+        val = _git_rev_parse(commit)
+        if val is None:
+            raise Error("illegal commit `%s'" % commit)
+        
+        commit = val
+        
+        version = self.describes.commit2describe(commit)
         if version:
             version = re.sub(r'(-\d+-g[0-9a-f]{7})$',
                              lambda m: m.group(1).replace("-", "+"),
