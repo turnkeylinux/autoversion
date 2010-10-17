@@ -18,7 +18,7 @@ def _getoutput(*command):
         raise Error("command failed with exitcode=%d: %s" % (error, " ".join(command)))
     return output
 
-def _git_rev_parse(commit):
+def git_rev_parse(commit):
     # skip expensive git-rev-parse if given a full commit id
     if re.match('[0-9a-f]{40}$', commit):
         return commit
@@ -61,7 +61,7 @@ class Describes:
         if self.precache:
             commit = self.map_describes_commits.get(describe)
         else:
-            commit = _git_rev_parse(describe)
+            commit = git_rev_parse(describe)
         return commit
 
     def commit2describe(self, commit):
@@ -130,7 +130,7 @@ class Autoversion:
         year, month, day, hour, min, sec, shortcommit = m.groups()
 
         # if the commit is not ambigious - we're ok
-        commit = _git_rev_parse(shortcommit)
+        commit = git_rev_parse(shortcommit)
         if commit:
             return commit
 
@@ -147,12 +147,6 @@ class Autoversion:
         return timestamp
 
     def commit2version(self, commit):
-        val = _git_rev_parse(commit)
-        if val is None:
-            raise Error("illegal commit `%s'" % commit)
-        
-        commit = val
-        
         version = self.describes.commit2describe(commit)
         if version:
             version = re.sub(r'(-\d+-g[0-9a-f]{7})$',

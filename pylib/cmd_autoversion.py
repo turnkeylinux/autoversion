@@ -9,7 +9,7 @@ import sys
 import help
 import getopt
 
-from autoversion import Autoversion
+import autoversion
 
 @help.usage(__doc__)
 def usage():
@@ -19,6 +19,12 @@ def usage():
 def fatal(s):
     print >> sys.stderr, "error: " + str(s)
     sys.exit(1)
+
+def resolve_committish(committish):
+    commit = autoversion.git_rev_parse(committish)
+    if commit is None:
+        fatal("invalid committish `%s'" % committish)
+    return commit
 
 def main():
     try:
@@ -37,13 +43,13 @@ def main():
     if not args:
         usage()
 
-    av = Autoversion(precache=len(args) > 1)
+    av = autoversion.Autoversion(precache=len(args) > 1)
     
     for arg in args:
         if opt_reverse:
             print av.version2commit(arg)
         else:
-            print av.commit2version(arg)
+            print av.commit2version(resolve_committish(arg))
 
 if __name__=="__main__":
     main()
