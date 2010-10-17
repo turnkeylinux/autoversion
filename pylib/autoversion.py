@@ -18,11 +18,12 @@ def _getoutput(*command):
         raise Error("command failed with exitcode=%d: %s" % (error, " ".join(command)))
     return output
 
-def git_rev_parse(commit):
-    error, output = _getstatusoutput("git-rev-parse", "--verify", commit)
+def git_rev_parse(rev):
+    error, commit = _getstatusoutput("git-rev-parse", "--verify", rev)
     if error:
         return None
-    return output
+    
+    return commit
 
 class Describes:
     """Class that maps git describes to git commits and vice versa"""
