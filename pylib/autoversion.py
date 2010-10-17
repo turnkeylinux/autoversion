@@ -42,7 +42,6 @@ class Describes:
         return zip(describes, revs)
 
     def __init__(self, precache=False, revs=None):
-
         if precache:
             describes_commits = self._get_describes_commits(revs)
             self.map_describes_commits = dict(describes_commits)
@@ -70,32 +69,44 @@ class Describes:
 
         return None
 
-class Autoversion:
-    Error = Error
+class Timestamps:
+    """Class that maps git commits to timestamps"""
 
     @staticmethod
-    def _get_map_commits_times():
+    def _get_commit_timestamps():
         output = _getoutput("git-rev-list", "--pretty=format:%at", "--all")
 
-        d = {}
         entries = ( entry.strip().split("\n") for entry in output.split("commit ")[1:] )
         for entry in entries:
             commit = entry[0]
             timestamp = int(entry[1])
 
-            d[commit] = timestamp
-        return d
+            yield commit, timestamp
+
+    def __init__(self, precache=False):
+        if precache:
+            self.map = dict(self._get_commit_timestamps())
+        else:
+            self.map = None
+            
+        self.precache = True
+
+    def commit2timestamp(self, commit):
+        if self.precache:
+            return self.map[commit]
+        
+        output = _getoutput("git-cat-file", "commit", commit)
+        timestamp = int(re.search(r' (\d{10}) ', output).group(1))
+        return timestamp
+
+class Autoversion:
+    Error = Error
 
     def __init__(self, precache=False):
         self.describes = Describes(precache)
-        if precache:
-            self.map_commits_times = self._get_map_commits_times()
-        else:
-            self.map_commits_times = None
+        self.timestamps = Timestamps(precache)
 
-        self.precache = precache
-
-    def _rev_parse_shortcommit(self, timestamp, shortcommit):
+    def _resolve_ambigious_shortcommit(self, timestamp, shortcommit):
         if not self.map_commits_times is None:
             self.map_commits_times = self._get_map_commits_times()
             
@@ -131,17 +142,8 @@ class Autoversion:
             return commit
 
         timestamp = timegm((int(year), int(month), int(day), int(hour), int(min), int(sec)))
-        return self._rev_parse_shortcommit(timestamp, shortcommit)
+        return self._resolve_ambigious_shortcommit(timestamp, shortcommit)
     
-    def _get_commit_time(self, commit):
-        if self.map_commits_times:
-            return self.map_commits_times[commit]
-        
-        output = _getoutput("git-cat-file", "commit", commit)
-
-        timestamp = int(re.search(r' (\d{10}) ', output).group(1))
-        return timestamp
-
     def commit2version(self, commit):
         version = self.describes.commit2describe(commit)
         if version:
@@ -152,7 +154,7 @@ class Autoversion:
                 return version[1:]
             return version
 
-        tm = gmtime(self._get_commit_time(commit))
+        tm = gmtime(self.timestamps.commit2timestamp(commit))
         return "0+%d.%d.%d+%02d:%02d:%02d+%s" % (tm.tm_year, tm.tm_mon, tm.tm_mday,
                                                  tm.tm_hour, tm.tm_min, tm.tm_sec,
                                                  commit[:8])
