@@ -2,8 +2,8 @@
 <?xml-stylesheet ekr_test?>
 <leo_file>
 <leo_header file_format="2" tnodes="0" max_tnode_index="51" clone_windows="0"/>
-<globals body_outline_ratio="0.5">
-	<global_window_position top="-15" left="513" height="951" width="666"/>
+<globals body_outline_ratio="0.209253417455">
+	<global_window_position top="0" left="604" height="951" width="666"/>
 	<global_log_window_position top="0" left="0" height="0" width="0"/>
 </globals>
 <preferences/>
@@ -24,12 +24,13 @@
 <v t="zaril.20101014064538" a="M"><vh>upgrade autoversion's autoversioning mechanism</vh></v>
 <v t="zaril.20101014055955" a="M"><vh>bug: bad version returned when tag doesn't start with v</vh></v>
 <v t="zaril.20101014063204.1" a="EM"><vh>allow autoversion to be used with forks</vh></v>
-<v t="zaril.20101014063204"><vh>add revision count to untagged autoversions</vh>
+<v t="zaril.20101014063204" a="E"><vh>add revision count to untagged autoversions</vh>
 <v t="zaril.20101016095956"><vh>bench.py</vh></v>
 </v>
 <v t="zaril.20101016124735"><vh>explore: can we trust git-describe?</vh></v>
 <v t="zaril.20101016123650" a="E"><vh>optimization: precache commits/times map</vh></v>
-<v t="zaril.20101016140042" a="TV"><vh>optimization: precache commits/describes</vh></v>
+<v t="zaril.20101016140042"><vh>optimization: precache commits/describes</vh></v>
+<v t="zaril.20101017150005" a="ETV"><vh>optimization: precache shortcommits/commits</vh></v>
 <v t="zaril.20101016123709"><vh>release new autoversion</vh></v>
 </v>
 </v>
@@ -487,6 +488,25 @@ after optimization
 		commit2version: 0.161
 		version2commit: 1.3
 
+</t>
+<t tx="zaril.20101017150005">
+Q: how much faster is the optimized git_rev_parse?
+A:
+    for full commits - nearly 500 times faster
+        100K/sec vs 200/sec
+
+BENCHMARKS
+
+test repository 
+    time autoversion -r $(autoversion $(git-rev-list --all)) &gt;/dev/null
+        5.5X improvement
+            before: 1.43
+            after: 0.246 
+
+    time autoversion -r $(cat versions) &gt;/dev/null
+        10X improvement
+            before: 1.353
+            after: 0.129
 </t>
 </tnodes>
 </leo_file>

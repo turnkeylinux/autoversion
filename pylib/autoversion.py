@@ -70,6 +70,41 @@ class Describes:
 
         return None
 
+class Shorts:
+    """Class that maps short-commits to commits"""
+    def _get_commit_shorts(self, shortlen, commits=None):
+        if commits is None:
+            commits = _getoutput("git-rev-list", "--all").split("\n")
+        
+        for commit in commits:
+            yield commit[:shortlen], commit
+
+    def __init__(self, precache=False, precache_commits=None, precache_shortlen=8):
+        if precache:
+            keyvals = self._get_commit_shorts(precache_shortlen, precache_commits)
+
+            # don't resolve ambigious values (assign None to doubles)
+            precache = {}
+            for key, val in keyvals:
+                if key in precache:
+                    precache[key] = None
+                else:
+                    precache[key] = val
+            self.precache = precache
+        else:
+            self.precache = {}
+
+    def short2commit(self, short):
+        """map a short commit to a commit.
+        Returns None if a one-to-one mapping does not exist (I.e., non-existant or ambigious)
+        """
+        if self.precache:
+            if short in self.precache:
+                return self.precache[short]
+            return None
+
+        return git_rev_parse(short)
+
 class Timestamps:
     """Class that maps git commits to timestamps"""
 
@@ -98,13 +133,15 @@ class Timestamps:
         timestamp = int(re.search(r' (\d{10}) ', output).group(1))
         return timestamp
 
-    
 class Autoversion:
     Error = Error
 
     def __init__(self, precache=False):
         self.timestamps = Timestamps(precache)
-        self.describes = Describes(precache, precache_commits=self.timestamps.precache.keys())
+        precache_commits=self.timestamps.precache.keys()
+        
+        self.shorts = Shorts(precache, precache_commits=precache_commits)
+        self.describes = Describes(precache, precache_commits=precache_commits)
 
     def _resolve_ambigious_shortcommit(self, timestamp, shortcommit):
         if not self.map_commits_times is None:
@@ -137,7 +174,7 @@ class Autoversion:
         year, month, day, hour, min, sec, shortcommit = m.groups()
 
         # if the commit is not ambigious - we're ok
-        commit = git_rev_parse(shortcommit)
+        commit = self.shorts.short2commit(shortcommit)
         if commit:
             return commit
 
