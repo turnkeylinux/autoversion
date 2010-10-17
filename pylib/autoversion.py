@@ -19,10 +19,6 @@ def _getoutput(*command):
     return output
 
 def git_rev_parse(commit):
-    # skip expensive git-rev-parse if given a full commit id
-    if re.match('[0-9a-f]{40}$', commit):
-        return commit
-
     error, output = _getstatusoutput("git-rev-parse", "--verify", commit)
     if error:
         return None

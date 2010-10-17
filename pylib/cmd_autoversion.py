@@ -5,6 +5,7 @@ Options:
   -r --reverse		map version to git commit
 
 """
+import re
 import sys
 import help
 import getopt
@@ -21,6 +22,10 @@ def fatal(s):
     sys.exit(1)
 
 def resolve_committish(committish):
+    # skip expensive git-rev-parse if given a full commit id
+    if re.match('[0-9a-f]{40}$', committish):
+        return committish
+
     commit = autoversion.git_rev_parse(committish)
     if commit is None:
         fatal("invalid committish `%s'" % committish)
