@@ -85,15 +85,13 @@ class Timestamps:
 
     def __init__(self, precache=False):
         if precache:
-            self.map = dict(self._get_commit_timestamps())
+            self.precache = dict(self._get_commit_timestamps())
         else:
-            self.map = None
+            self.precache = {}
             
-        self.precache = True
-
     def commit2timestamp(self, commit):
         if self.precache:
-            return self.map[commit]
+            return self.precache[commit]
         
         output = _getoutput("git-cat-file", "commit", commit)
         timestamp = int(re.search(r' (\d{10}) ', output).group(1))
@@ -103,8 +101,8 @@ class Autoversion:
     Error = Error
 
     def __init__(self, precache=False):
-        self.describes = Describes(precache)
         self.timestamps = Timestamps(precache)
+        self.describes = Describes(precache, revs=self.timestamps.precache.keys())
 
     def _resolve_ambigious_shortcommit(self, timestamp, shortcommit):
         if not self.map_commits_times is None:
