@@ -28,22 +28,22 @@ class Describes:
     """Class that maps git describes to git commits and vice versa"""
     
     @staticmethod
-    def _get_describes_commits(revs=None):
-        if revs is None:
-            revs = _getoutput("git-rev-list", "--all").split("\n")
+    def _get_describes_commits(commits=None):
+        if commits is None:
+            commits = _getoutput("git-rev-list", "--all").split("\n")
 
         command = ["git-describe"]
-        command.extend(revs)
+        command.extend(commits)
 
         p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         p.wait()
 
         describes = p.stdout.read().rstrip("\n").split("\n")
-        return zip(describes, revs)
+        return zip(describes, commits)
 
-    def __init__(self, precache=False, revs=None):
+    def __init__(self, precache=False, commits=None):
         if precache:
-            describes_commits = self._get_describes_commits(revs)
+            describes_commits = self._get_describes_commits(commits)
             self.map_describes_commits = dict(describes_commits)
             self.map_commits_describes = dict(( (v[1], v[0]) for v in describes_commits ))
         else:
@@ -102,7 +102,7 @@ class Autoversion:
 
     def __init__(self, precache=False):
         self.timestamps = Timestamps(precache)
-        self.describes = Describes(precache, revs=self.timestamps.precache.keys())
+        self.describes = Describes(precache, commits=self.timestamps.precache.keys())
 
     def _resolve_ambigious_shortcommit(self, timestamp, shortcommit):
         if not self.map_commits_times is None:
