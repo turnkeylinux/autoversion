@@ -164,7 +164,7 @@ class Autoversion:
         if commit:
             return commit
         
-        m = re.match(r'^0\+(\d\d\d\d)\.(\d\d?)\.(\d\d?)\+(\d\d?):(\d\d?):(\d\d?)\+([0-9a-f]{8})$', version)
+        m = re.match(r'^0\+(\d\d\d\d)\.(\d\d?)\.(\d\d?)\+(\d\d?).(\d\d?).(\d\d?)\+([0-9a-f]{8})$', version)
         if not m:
             commit = self.describes.describe2commit(version)
             if commit:
@@ -193,7 +193,7 @@ class Autoversion:
             return version
 
         tm = gmtime(self.timestamps.commit2timestamp(commit))
-        return "0+%d.%d.%d+%02d:%02d:%02d+%s" % (tm.tm_year, tm.tm_mon, tm.tm_mday,
+        return "0+%d.%d.%d+%02d.%02d.%02d+%s" % (tm.tm_year, tm.tm_mon, tm.tm_mday,
                                                  tm.tm_hour, tm.tm_min, tm.tm_sec,
                                                  commit[:8])
     
