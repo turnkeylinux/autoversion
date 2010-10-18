@@ -8,9 +8,8 @@ class Error(Exception):
 
 def _getstatusoutput(*command):
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
-
-    return p.returncode, p.stdout.read().rstrip("\n")
+    output = p.communicate()[0]
+    return p.returncode, output.rstrip("\n")
 
 def _getoutput(*command):
     error, output = _getstatusoutput(*command)
@@ -36,10 +35,9 @@ class Describes:
         command = ["git-describe"]
         command.extend(commits)
 
-        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.wait()
+        status, output = _getstatusoutput(*command)
 
-        describes = p.stdout.read().rstrip("\n").split("\n")
+        describes = output.split("\n")
         return zip(describes, commits)
 
     def __init__(self, precache=False, precache_commits=None):
