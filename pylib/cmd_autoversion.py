@@ -39,7 +39,7 @@ def resolve_committish(committish):
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'rh', ['reverse'])
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'rh', ['reverse'])
     except getopt.GetoptError, e:
         usage(e)
 
