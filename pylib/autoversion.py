@@ -38,7 +38,7 @@ class Describes:
 
         status, output = _getstatusoutput(*command)
 
-        describes = output.split("\n")
+        describes = map(urllib.unquote, output.split("\n"))
         return zip(describes, commits)
 
     def __init__(self, precache=False, precache_commits=None):
@@ -65,7 +65,7 @@ class Describes:
 
         error, describe = _getstatusoutput("git-describe", commit)
         if not error:
-            return describe
+            return urllib.unquote(describe)
 
         return None
 
@@ -160,7 +160,6 @@ class Autoversion:
         version = re.sub(r'(\+\d+\+g[0-9a-f]{7})$',
                          lambda m: m.group(1).replace("+", "-"),
                          version)
-        version = urllib.quote(version)
         
         commit = self.describes.describe2commit("v" + version)
         if commit:
@@ -187,7 +186,6 @@ class Autoversion:
     def commit2version(self, commit):
         version = self.describes.commit2describe(commit)
         if version:
-            version = urllib.unquote(version)
             version = re.sub(r'(-\d+-g[0-9a-f]{7})$',
                              lambda m: m.group(1).replace("-", "+"),
                              version)
