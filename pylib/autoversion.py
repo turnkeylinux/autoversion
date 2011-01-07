@@ -2,6 +2,7 @@ import re
 import subprocess
 from time import gmtime
 from calendar import timegm
+import urllib
 
 class Error(Exception):
     pass
@@ -159,7 +160,8 @@ class Autoversion:
         version = re.sub(r'(\+\d+\+g[0-9a-f]{7})$',
                          lambda m: m.group(1).replace("+", "-"),
                          version)
-
+        version = urllib.quote(version)
+        
         commit = self.describes.describe2commit("v" + version)
         if commit:
             return commit
@@ -185,6 +187,7 @@ class Autoversion:
     def commit2version(self, commit):
         version = self.describes.commit2describe(commit)
         if version:
+            version = urllib.unquote(version)
             version = re.sub(r'(-\d+-g[0-9a-f]{7})$',
                              lambda m: m.group(1).replace("-", "+"),
                              version)
