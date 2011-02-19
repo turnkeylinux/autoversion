@@ -11,6 +11,7 @@ Example usage:
   autoversion $(git-rev-list --all)     # print all versions
 
 """
+import os
 import re
 import sys
 import help
@@ -27,12 +28,12 @@ def fatal(s):
     print >> sys.stderr, "error: " + str(s)
     sys.exit(1)
 
-def resolve_committish(committish):
+def resolve_committish(git, committish):
     # skip expensive git-rev-parse if given a full commit id
     if re.match('[0-9a-f]{40}$', committish):
         return committish
 
-    commit = autoversion.git_rev_parse(committish)
+    commit = git.rev_parse(committish)
     if commit is None:
         fatal("invalid committish `%s'" % committish)
     return commit
@@ -54,13 +55,13 @@ def main():
     if not args:
         usage()
 
-    av = autoversion.Autoversion(precache=len(args) > 1)
+    av = autoversion.Autoversion(os.getcwd(), precache=len(args) > 1)
     
     for arg in args:
         if opt_reverse:
             print av.version2commit(arg)
         else:
-            print av.commit2version(resolve_committish(arg))
+            print av.commit2version(resolve_committish(av.git, arg))
 
 if __name__=="__main__":
     main()

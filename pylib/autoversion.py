@@ -1,47 +1,27 @@
 import re
-import subprocess
+
 from time import gmtime
 from calendar import timegm
 import urllib
 
+from git import Git
+
 class Error(Exception):
     pass
-
-def _getstatusoutput(*command):
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output = p.communicate()[0]
-    return p.returncode, output.rstrip("\n")
-
-def _getoutput(*command):
-    error, output = _getstatusoutput(*command)
-    if error:
-        raise Error("command failed with exitcode=%d: %s" % (error, " ".join(command)))
-    return output
-
-def git_rev_parse(rev):
-    error, commit = _getstatusoutput("git-rev-parse", "--verify", rev)
-    if error:
-        return None
-    
-    return commit
 
 class Describes:
     """Class that maps git describes to git commits and vice versa"""
     
-    @staticmethod
-    def _get_describes_commits(commits=None):
+    def _get_describes_commits(self, commits=None):
         if commits is None:
-            commits = _getoutput("git-rev-list", "--all").split("\n")
+            commits = self.git.rev_list("--all")
 
-        command = ["git-describe"]
-        command.extend(commits)
-
-        status, output = _getstatusoutput(*command)
-
-        describes = map(urllib.unquote, output.split("\n"))
+        describes = map(urllib.unquote, self.git.describe(*commits))
         return zip(describes, commits)
 
-    def __init__(self, precache=False, precache_commits=None):
+    def __init__(self, git, precache=False, precache_commits=None):
+        self.git = git
+        
         if precache:
             describes_commits = self._get_describes_commits(precache_commits)
             self.map_describes_commits = dict(describes_commits)
@@ -56,16 +36,16 @@ class Describes:
         if self.precache:
             commit = self.map_describes_commits.get(describe)
         else:
-            commit = git_rev_parse(describe)
+            commit = self.git.rev_parse(describe)
         return commit
 
     def commit2describe(self, commit):
         if self.precache:
             return self.map_commits_describes.get(commit)
 
-        error, describe = _getstatusoutput("git-describe", commit)
-        if not error:
-            return urllib.unquote(describe)
+        describe = self.git.describe(commit)
+        if describe:
+            return urllib.unquote(describe[0])
 
         return None
 
@@ -73,12 +53,14 @@ class Shorts:
     """Class that maps short-commits to commits"""
     def _get_commit_shorts(self, shortlen, commits=None):
         if commits is None:
-            commits = _getoutput("git-rev-list", "--all").split("\n")
+            commits = self.git.rev_list("--all")
         
         for commit in commits:
             yield commit[:shortlen], commit
 
-    def __init__(self, precache=False, precache_commits=None, precache_shortlen=8):
+    def __init__(self, git, precache=False, precache_commits=None, precache_shortlen=8):
+        self.git = git
+        
         if precache:
             keyvals = self._get_commit_shorts(precache_shortlen, precache_commits)
 
@@ -102,23 +84,24 @@ class Shorts:
                 return self.precache[short]
             return None
 
-        return git_rev_parse(short)
+        return self.git.rev_parse("--verify", short)
 
 class Timestamps:
     """Class that maps git commits to timestamps"""
 
-    @staticmethod
-    def _get_commit_timestamps():
-        output = _getoutput("git-rev-list", "--pretty=format:%at", "--all")
-
-        entries = ( entry.strip().split("\n") for entry in output.split("commit ")[1:] )
-        for entry in entries:
-            commit = entry[0]
-            timestamp = int(entry[1])
+    def _get_commit_timestamps(self):
+        lines = self.git.rev_list("--pretty=format:%at", "--all")
+        for i in range(0, len(lines), 2):
+            commit = lines[i]
+            if not commit.startswith("commit "):
+                raise Error("badly formatted line (%s)" % line)
+            commit = commit[len("commit "):]
+            timestamp = int(lines[i+1])
 
             yield commit, timestamp
 
-    def __init__(self, precache=False):
+    def __init__(self, git, precache=False):
+        self.git = git
         self.precache = {}
         self.precache_commits = []
         if precache:
@@ -131,19 +114,23 @@ class Timestamps:
         if self.precache:
             return self.precache[commit]
         
-        output = _getoutput("git-cat-file", "commit", commit)
+        output = self.git.cat_file("commit", commit)
         timestamp = int(re.search(r' (\d{10}) ', output).group(1))
         return timestamp
 
 class Autoversion:
     Error = Error
 
-    def __init__(self, precache=False):
-        self.timestamps = Timestamps(precache)
+    def __init__(self, path, precache=False):
+        git = Git(path)
+        
+        self.timestamps = Timestamps(git, precache)
         precache_commits = self.timestamps.precache_commits
         
-        self.shorts = Shorts(precache, precache_commits=precache_commits)
-        self.describes = Describes(precache, precache_commits=precache_commits)
+        self.shorts = Shorts(git, precache, precache_commits=precache_commits)
+        self.describes = Describes(git, precache, precache_commits=precache_commits)
+
+        self.git = git
 
     def _resolve_ambigious_shortcommit(self, short, timestamp):
         if not self.timestamps.precache:
@@ -199,8 +186,8 @@ class Autoversion:
                                                  commit[:8])
     
 # convenience functions
-def version2commit(version):
-    return Autoversion().version2commit(version)
+def version2commit(path, version):
+    return Autoversion(path).version2commit(version)
 
-def commit2version(commit):
-    return Autoversion().commit2version(commit)
+def commit2version(path, commit):
+    return Autoversion(path).commit2version(commit)
