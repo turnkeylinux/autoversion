@@ -179,7 +179,7 @@ class Autoversion:
             m = re.search(r'(.*)(-\d+-g[0-9a-f]{7})$', version)
             if m:
                 version = m.group(1) + m.group(2).replace('-', '+')
-            else:
+            elif not version[-1].isdigit():
                 version += "+0"
 
             if version.startswith("v"):
