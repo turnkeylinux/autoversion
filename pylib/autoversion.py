@@ -144,6 +144,9 @@ class Autoversion:
     
     def version2commit(self, version):
         # easy street if its a version from git-describe
+        if version.endswith("+0"):
+            version = version[:-2]
+
         version = re.sub(r'(\+\d+\+g[0-9a-f]{7})$',
                          lambda m: m.group(1).replace("+", "-"),
                          version)
@@ -173,11 +176,15 @@ class Autoversion:
     def commit2version(self, commit):
         version = self.describes.commit2describe(commit)
         if version:
-            version = re.sub(r'(-\d+-g[0-9a-f]{7})$',
-                             lambda m: m.group(1).replace("-", "+"),
-                             version)
+            m = re.search(r'(.*)(-\d+-g[0-9a-f]{7})$', version)
+            if m:
+                version = m.group(1) + m.group(2).replace('-', '+')
+            else:
+                version += "+0"
+
             if version.startswith("v"):
                 return version[1:]
+
             return version
 
         tm = gmtime(self.timestamps.commit2timestamp(commit))
