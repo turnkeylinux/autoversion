@@ -115,7 +115,7 @@ class Timestamps:
             return self.precache[commit]
         
         output = self.git.cat_file("commit", commit)
-        timestamp = int(re.search(r' (\d{10}) ', output).group(1))
+        timestamp = int(re.search(r' (\d{9,10}) ', output).group(1))
         return timestamp
 
 class Autoversion:
