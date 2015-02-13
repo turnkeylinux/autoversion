@@ -10,7 +10,12 @@
 
 """Map git commits to auto-versions and vice versa
 
+Arguments:
+
+  <commit> := any revision supported by git (e.g., commit ids, tags, refs, etc.)
+
 Options:
+
   -r --reverse		map version to git commit
 
 Example usage:
@@ -57,7 +62,7 @@ def main():
     for opt, val in opts:
         if opt == '-h':
             usage()
-            
+
         if opt in ('-r', '--reverse'):
             opt_reverse = True
 
@@ -65,7 +70,7 @@ def main():
         usage()
 
     av = autoversion.Autoversion(os.getcwd(), precache=len(args) > 1)
-    
+
     for arg in args:
         if opt_reverse:
             print av.version2commit(arg)
