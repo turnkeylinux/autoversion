@@ -1,7 +1,8 @@
 Map git commits to auto-versions and vice versa
+===============================================
 
 Features
-========
+--------
 
 - Calculated versions are Debian compatible.
 
@@ -15,7 +16,7 @@ Features
   signed tags.
   
 Usage
-=====
+-----
 
 ::
 
@@ -80,8 +81,8 @@ Usage example
     $ autoversion -r 0.1
     7128df3977bc65de7b115aec7e05472fe508c843
 
-Terminology
-===========
+Version format
+==============
 
 tagged autoversion := tag based autoversion
 -------------------------------------------
@@ -129,5 +130,4 @@ Notes:
   
 * Untagged autoversion should always be evaluated by Debian package
   management as earlier than a tagged autoversion
-
 
