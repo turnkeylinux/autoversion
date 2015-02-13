@@ -21,7 +21,7 @@ Usage
 ::
 
     $ autoversion -h
-    version 0.9.2+15+gee570a5 (c) TurnKey Linux - http://www.turnkeylinux.org
+    version 0.9.2+15+gee570a5 (c) TurnKey GNU/Linux - http://www.turnkeylinux.org
     Syntax: autoversion <commit> [ ... ]
     Syntax: autoversion -r <version> [ ... ]
     Map git commits to auto-versions and vice versa
