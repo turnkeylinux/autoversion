@@ -11,5 +11,6 @@ Package: autoversion
 Architecture: any
 Depends:
  git-core (>= 1:1.5.2),
+ ${misc:Depends},
  pyproject-common,
 Description: map git commits to auto-versions and vice versa
