@@ -12,4 +12,3 @@ include /usr/share/dpkg/buildflags.mk
 
 override_dh_auto_install:
 	dh_auto_install -- prefix=debian/$(DEB_SOURCE)/usr
-	find $(CURDIR)/debian/$(DEB_SOURCE) -type d -empty -delete
