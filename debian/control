@@ -12,7 +12,7 @@ X-Python-Version: >= 2.6
 Package: autoversion
 Architecture: any
 Depends:
- git-core (>= 1:1.5.2) | git
+ git-core (>= 1:1.5.2) | git (>= 1:2.1.4),
  ${misc:Depends},
  ${shlibs:Depends},
  ${python:Depends},
