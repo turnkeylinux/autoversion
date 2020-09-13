@@ -4,8 +4,7 @@ Priority: optional
 Maintainer: Jeremy Davis <jeremy@turnkeylinux.org>
 Build-Depends:
  debhelper (>= 10),
- pyproject-common,
- python-all (>= 2.6.6-3~),
+ python3-all (>= 3.5~),
 Standards-Version: 4.0.0
 X-Python-Version: >= 2.6
 
@@ -16,5 +15,4 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  ${python:Depends},
- pyproject-common,
 Description: map git commits to auto-versions and vice versa
