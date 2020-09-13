@@ -3,3 +3,5 @@ tmp
 *.pyo
 *.tar.bz2
 tags
+build
+__pycache__

@@ -15,4 +15,5 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  ${python:Depends},
+ turnkey-gitwrapper,
 Description: map git commits to auto-versions and vice versa
