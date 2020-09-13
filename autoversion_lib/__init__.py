@@ -11,7 +11,7 @@ import re
 
 from time import gmtime
 from calendar import timegm
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from git import Git
 
@@ -25,8 +25,8 @@ class Describes:
         if commits is None:
             commits = self.git.rev_list("--all")
 
-        describes = map(urllib.unquote, self.git.describe(*commits))
-        return zip(describes, commits)
+        describes = list(map(urllib.parse.unquote, self.git.describe(*commits)))
+        return list(zip(describes, commits))
 
     def __init__(self, git, precache=False, precache_commits=None):
         self.git = git
@@ -54,7 +54,7 @@ class Describes:
 
         describe = self.git.describe(commit)
         if describe:
-            return urllib.unquote(describe[0])
+            return urllib.parse.unquote(describe[0])
 
         return None
 
@@ -145,7 +145,7 @@ class Autoversion:
         if not self.timestamps.precache:
             self.timestamps = Timestamps(precache=True)
             
-        for commit, commit_timestamp in self.timestamps.precache.items():
+        for commit, commit_timestamp in list(self.timestamps.precache.items()):
             if commit.startswith(short) and commit_timestamp == timestamp:
                 return commit
 

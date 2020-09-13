@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright (c) TurnKey GNU/Linux - http://www.turnkeylinux.org
 #
 # This file is part of AutoVersion
@@ -28,18 +28,17 @@ Example usage:
 import os
 import re
 import sys
-import help
 import getopt
 
 import autoversion
 
 @help.usage(__doc__)
 def usage():
-    print >> sys.stderr, "Syntax: %s <commit> [ ... ]" % sys.argv[0]
-    print >> sys.stderr, "Syntax: %s -r <version> [ ... ]" % sys.argv[0]
+    print("Syntax: %s <commit> [ ... ]" % sys.argv[0], file=sys.stderr)
+    print("Syntax: %s -r <version> [ ... ]" % sys.argv[0], file=sys.stderr)
 
 def fatal(s):
-    print >> sys.stderr, "error: " + str(s)
+    print("error: " + str(s), file=sys.stderr)
     sys.exit(1)
 
 def resolve_committish(git, committish):
@@ -55,7 +54,7 @@ def resolve_committish(git, committish):
 def main():
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:], 'rh', ['reverse'])
-    except getopt.GetoptError, e:
+    except getopt.GetoptError as e:
         usage(e)
 
     opt_reverse = False
@@ -73,9 +72,9 @@ def main():
 
     for arg in args:
         if opt_reverse:
-            print av.version2commit(arg)
+            print(av.version2commit(arg))
         else:
-            print av.commit2version(resolve_committish(av.git, arg))
+            print(av.commit2version(resolve_committish(av.git, arg)))
 
 if __name__=="__main__":
     main()
