@@ -10,5 +10,5 @@ setup(
     author_email="jeremy@turnkeylinux.org",
     url="https://github.com/turnkeylinux/autoversion",
     packages=["autoversion_lib"],
-    scripts=["autoversion"]
+    scripts=["autoversion2"]
 )
