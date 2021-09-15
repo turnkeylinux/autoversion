@@ -15,21 +15,21 @@ import argparse
 
 import autoversion_lib as autoversion
 
-examples = """Example usage:
+EXAMPLES = """Example usage:
     autoversion HEAD                    # print latest version
     autoversion -r v1.0                 # print commit of version v1.0
     autoversion $(git-rev-list --all)   # print all versions
 """
 
 
-def fatal(s):
-    print("error: " + str(s), file=sys.stderr)
+def fatal(msg):
+    print("error: " + str(msg), file=sys.stderr)
     sys.exit(1)
 
 
 def resolve_committish(git, committish):
     # skip expensive git-rev-parse if given a full commit id
-    if re.match('[0-9a-f]{40}$', committish):
+    if re.match("[0-9a-f]{40}$", committish):
         return committish
 
     commit = git.rev_parse(committish)
@@ -39,22 +39,28 @@ def resolve_committish(git, committish):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Map git commits to auto'
-                                                 '-versions and vice versa',
-                                     epilog=examples)
-    parser.add_argument('-r', '--reverse', action='store_true', default=False,
-                        help='map version to git commit')
-    parser.add_argument('commit', help='any revision supported by git (e.g.,'
-                                       'commit ids, tags, refs, etc.)')
+    parser = argparse.ArgumentParser(
+        description="Map git commits to auto" "-versions and vice versa",
+        epilog=EXAMPLES,
+    )
+    parser.add_argument(
+        "-r",
+        "--reverse",
+        action="store_true",
+        default=False,
+        help="map version to git commit",
+    )
+    parser.add_argument(
+        "commit",
+        help="any revision supported by git (e.g.," "commit ids, tags, refs, etc.)",
+    )
     args = parser.parse_args()
 
-    opt_reverse = reverse
-
-    av = autoversion.Autoversion(os.getcwd(), precache=len(args) > 1)
+    auto_ver = autoversion.Autoversion(os.getcwd(), precache=len(args) > 1)
     if args.reverse:
-        print(av.version2commit(arg))
+        print(auto_ver.version2commit(args.commit))
     else:
-        print(av.commit2version(resolve_committish(av.git, arg)))
+        print(auto_ver.commit2version(resolve_committish(auto_ver.git, args.commit)))
 
 
 if __name__ == "__main__":
