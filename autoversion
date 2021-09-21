@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright (c) TurnKey GNU/Linux - http://www.turnkeylinux.org
 #
 # This file is part of AutoVersion
@@ -8,11 +8,60 @@
 # Free Software Foundation; either version 3 of the License, or (at your
 # option) any later version.
 
-from os.path import *
-import pyproject
+import os
+import re
+import sys
+import argparse
 
-class CliWrapper(pyproject.CliWrapper):
-    INSTALL_PATH = dirname(__file__)
+import autoversion_lib as autoversion
 
-if __name__=='__main__':
-    CliWrapper.main()
+EXAMPLES = """Example usage:
+    autoversion HEAD                    # print latest version
+    autoversion -r v1.0                 # print commit of version v1.0
+    autoversion $(git-rev-list --all)   # print all versions
+"""
+
+
+def fatal(msg):
+    print("error: " + str(msg), file=sys.stderr)
+    sys.exit(1)
+
+
+def resolve_committish(git, committish):
+    # skip expensive git-rev-parse if given a full commit id
+    if re.match("[0-9a-f]{40}$", committish):
+        return committish
+
+    commit = git.rev_parse(committish)
+    if commit is None:
+        fatal("invalid committish `%s'" % committish)
+    return commit
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Map git commits to auto" "-versions and vice versa",
+        epilog=EXAMPLES,
+    )
+    parser.add_argument(
+        "-r",
+        "--reverse",
+        action="store_true",
+        default=False,
+        help="map version to git commit",
+    )
+    parser.add_argument(
+        "commit",
+        help="any revision supported by git (e.g.," "commit ids, tags, refs, etc.)",
+    )
+    args = parser.parse_args()
+
+    auto_ver = autoversion.Autoversion(os.getcwd(), precache=len(args) > 1)
+    if args.reverse:
+        print(auto_ver.version2commit(args.commit))
+    else:
+        print(auto_ver.commit2version(resolve_committish(auto_ver.git, args.commit)))
+
+
+if __name__ == "__main__":
+    main()
