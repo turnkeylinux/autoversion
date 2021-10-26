@@ -12,6 +12,7 @@ import re
 from time import gmtime
 from calendar import timegm
 import urllib.parse
+from typing import Optional, List, Tuple, Dict, Generator
 
 from gitwrapper import Git
 
@@ -23,15 +24,21 @@ class AutoverError(Exception):
 class Describes:
     """Class that maps git describes to git commits and vice versa"""
 
-    def _get_describes_commits(self, commits=None):
+    def _get_describes_commits(
+            self, commits: Optional[List[str]]=None) -> List[Tuple[str, str]]:
         if commits is None:
             commits = self.git.rev_list("--all")
 
         describes = list(map(urllib.parse.unquote, self.git.describe(*commits)))
         return list(zip(describes, commits))
 
-    def __init__(self, git, precache=False, precache_commits=None):
+    def __init__(self,
+            git: Git, precache: bool=False,
+            precache_commits: Optional[List[str]]=None):
         self.git = git
+
+        self.map_describes_commits: Optional[Dict[str, str]]
+        self.map_commits_describes: Optional[Dict[str, str]]
 
         if precache:
             describes_commits = self._get_describes_commits(precache_commits)
@@ -43,15 +50,17 @@ class Describes:
 
         self.precache = precache
 
-    def describe2commit(self, describe):
+    def describe2commit(self, describe: str) -> Optional[str]:
         if self.precache:
+            assert self.map_describes_commits is not None
             commit = self.map_describes_commits.get(describe)
         else:
             commit = self.git.rev_parse(describe)
         return commit
 
-    def commit2describe(self, commit):
+    def commit2describe(self, commit: str) -> Optional[str]:
         if self.precache:
+            assert self.map_commits_describes is not None
             return self.map_commits_describes.get(commit)
 
         describe = self.git.describe(commit)
@@ -64,31 +73,40 @@ class Describes:
 class Shorts:
     """Class that maps short-commits to commits"""
 
-    def _get_commit_shorts(self, shortlen, commits=None):
+    def _get_commit_shorts(
+            self, shortlen: int,
+            commits: Optional[List[str]]=None
+    ) -> Generator[Tuple[str, str], None, None]:
         if commits is None:
             commits = self.git.rev_list("--all")
 
         for commit in commits:
             yield commit[:shortlen], commit
 
-    def __init__(self, git, precache=False, precache_commits=None, precache_shortlen=8):
+    def __init__(
+            self, git: Git, precache: bool=False,
+            precache_commits: Optional[List[str]] = None,
+            precache_shortlen: int=8):
         self.git = git
+
+        self.precache: Dict[str, Optional[str]]
 
         if precache:
             keyvals = self._get_commit_shorts(precache_shortlen, precache_commits)
 
+            precache_: Dict[str, Optional[str]]
             # don't resolve ambigious values (assign None to doubles)
-            precache = {}
+            precache_ = {}
             for key, val in keyvals:
-                if key in precache:
-                    precache[key] = None
+                if key in precache_:
+                    precache_[key] = None
                 else:
-                    precache[key] = val
-            self.precache = precache
+                    precache_[key] = val
+            self.precache = precache_
         else:
             self.precache = {}
 
-    def short2commit(self, short):
+    def short2commit(self, short: str) -> Optional[str]:
         """map a short commit to a commit.
         Returns None if a one-to-one mapping does not exist (I.e., non-existant
         or ambigious)
@@ -104,7 +122,7 @@ class Shorts:
 class Timestamps:
     """Class that maps git commits to timestamps"""
 
-    def _get_commit_timestamps(self):
+    def _get_commit_timestamps(self) -> Generator[Tuple[str, int], None, None]:
         lines = self.git.rev_list("--pretty=format:%at", "--all")
         for i in range(0, len(lines), 2):
             commit = lines[i]
@@ -115,27 +133,29 @@ class Timestamps:
 
             yield commit, timestamp
 
-    def __init__(self, git, precache=False):
+    def __init__(self, git: Git, precache: bool=False):
         self.git = git
-        self.precache = {}
-        self.precache_commits = []
+        self.precache: Dict[str, int] = {}
+        self.precache_commits: List[str] = []
         if precache:
             commit_timestamps = self._get_commit_timestamps()
             for commit, timestamp in commit_timestamps:
                 self.precache[commit] = timestamp
                 self.precache_commits.append(commit)
 
-    def commit2timestamp(self, commit):
+    def commit2timestamp(self, commit: str) -> int:
         if self.precache:
             return self.precache[commit]
 
         output = self.git.cat_file("commit", commit)
-        timestamp = int(re.search(r" (\d{9,10}) ", output).group(1))
+        m = re.search(r" (\d{9,10}) ", output)
+        assert m is not None
+        timestamp = int(m.group(1))
         return timestamp
 
 
 class Autoversion:
-    def __init__(self, path, precache=False):
+    def __init__(self, path: str, precache: bool=False):
         git = Git(path)
 
         self.timestamps = Timestamps(git, precache)
@@ -146,7 +166,7 @@ class Autoversion:
 
         self.git = git
 
-    def _resolve_ambigious_shortcommit(self, short, timestamp):
+    def _resolve_ambigious_shortcommit(self, short: str, timestamp: int) -> str:
         if not self.timestamps.precache:
             self.timestamps = Timestamps(self.git, precache=True)
 
@@ -156,7 +176,7 @@ class Autoversion:
 
         raise AutoverError("no matching commits")
 
-    def version2commit(self, version):
+    def version2commit(self, version: str) -> str:
         # easy street if its a version from git-describe
         if version.endswith("+0"):
             version = version[:-2]
@@ -193,7 +213,7 @@ class Autoversion:
         )
         return self._resolve_ambigious_shortcommit(shortcommit, timestamp)
 
-    def commit2version(self, commit):
+    def commit2version(self, commit: str) -> str:
         version = self.describes.commit2describe(commit)
         if version:
             m = re.search(r"(.*)(-\d+-g[0-9a-f]{7})$", version)
@@ -220,9 +240,9 @@ class Autoversion:
 
 
 # convenience functions
-def version2commit(path, version):
+def version2commit(path: str, version: str) -> str:
     return Autoversion(path).version2commit(version)
 
 
-def commit2version(path, commit):
+def commit2version(path: str, commit: str) -> str:
     return Autoversion(path).commit2version(commit)
