@@ -21,23 +21,25 @@ Usage
 ::
 
     $ autoversion -h
-    version 0.9.2+15+gee570a5 (c) TurnKey GNU/Linux - http://www.turnkeylinux.org
-    Syntax: autoversion <commit> [ ... ]
-    Syntax: autoversion -r <version> [ ... ]
+    usage: autoversion [-h] [-r] commit
+
     Map git commits to auto-versions and vice versa
 
-    Arguments:
+    positional arguments:
 
-        <commit> := any revision supported by git (e.g., commit ids, tags, refs, etc.)
+        commit         any revision supported by git (e.g.,commit ids, tags,
+                       refs, etc.)
 
-    Options:
-      -r --reverse		map version to git commit
+    optional arguments:
+
+        -h, --help     show this help message and exit
+        -r, --reverse  map version to git commit
 
     Example usage:
 
-          autoversion HEAD                      # print latest version
-          autoversion -r v1.0                   # print commit of version v1.0
-          autoversion $(git-rev-list --all)     # print all versions
+        autoversion HEAD                    # print latest version
+        autoversion -r v1.0                 # print commit of version v1.0
+        autoversion $(git-rev-list --all)   # print all versions
 
 Usage example
 -------------
@@ -87,8 +89,6 @@ Version format
 tagged autoversion := tag based autoversion
 -------------------------------------------
 
-This is the version tag created by Covin's git-tag-release.
-
 The version calculation is based on git-describe (fast)
 
 There are two types of tag based autoversions
@@ -126,7 +126,7 @@ Example::
 
 Notes:
 
-* Version may be calculated more slowly.  
+* Version may be calculated more slowly.
   
 * Untagged autoversion should always be evaluated by Debian package
   management as earlier than a tagged autoversion

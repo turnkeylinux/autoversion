@@ -40,6 +40,7 @@ def resolve_committish(git, committish):
 
 def main():
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Map git commits to auto" "-versions and vice versa",
         epilog=EXAMPLES,
     )
@@ -55,8 +56,7 @@ def main():
         help="any revision supported by git (e.g.," "commit ids, tags, refs, etc.)",
     )
     args = parser.parse_args()
-
-    auto_ver = autoversion.Autoversion(os.getcwd(), precache=len(args) > 1)
+    auto_ver = autoversion.Autoversion(os.getcwd(), precache=args.reverse)
     if args.reverse:
         print(auto_ver.version2commit(args.commit))
     else:
