@@ -14,6 +14,7 @@ import sys
 import argparse
 
 import autoversion_lib as autoversion
+from autoversion_lib import AutoverError
 
 EXAMPLES = """Example usage:
     autoversion HEAD                    # print latest version
@@ -56,7 +57,10 @@ def main():
         help="any revision supported by git (e.g.," "commit ids, tags, refs, etc.)",
     )
     args = parser.parse_args()
-    auto_ver = autoversion.Autoversion(os.getcwd(), precache=args.reverse)
+    try:
+        auto_ver = autoversion.Autoversion(os.getcwd(), precache=args.reverse)
+    except AutoverError as e:
+        fatal(e)
     if args.reverse:
         print(auto_ver.version2commit(args.commit))
     else:

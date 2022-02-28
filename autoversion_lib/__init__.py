@@ -14,7 +14,7 @@ from calendar import timegm
 import urllib.parse
 from typing import Optional, List, Tuple, Dict, Generator
 
-from gitwrapper import Git
+from gitwrapper import Git, GitError
 
 
 class AutoverError(Exception):
@@ -156,7 +156,10 @@ class Timestamps:
 
 class Autoversion:
     def __init__(self, path: str, precache: bool=False):
-        git = Git(path)
+        try:
+            git = Git(path)
+        except GitError as e:
+            raise AutoverError(f"failed to initialize gitwrapper: {e}") from e
 
         self.timestamps = Timestamps(git, precache)
         precache_commits = self.timestamps.precache_commits
