@@ -14,7 +14,7 @@ from calendar import timegm
 import urllib.parse
 from typing import Optional, Generator
 
-from gitwrapper import Git, GitError
+from gitwrapper import Git, GitError  # type: ignore
 
 
 class AutoverError(Exception):
