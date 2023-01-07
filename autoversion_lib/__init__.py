@@ -12,7 +12,7 @@ import re
 from time import gmtime
 from calendar import timegm
 import urllib.parse
-from typing import Optional, List, Tuple, Dict, Generator
+from typing import Optional, Generator
 
 from gitwrapper import Git, GitError
 
@@ -25,7 +25,7 @@ class Describes:
     """Class that maps git describes to git commits and vice versa"""
 
     def _get_describes_commits(
-            self, commits: Optional[List[str]]=None) -> List[Tuple[str, str]]:
+            self, commits: Optional[list[str]]=None) -> list[tuple[str, str]]:
         if commits is None:
             commits = self.git.rev_list("--all")
 
@@ -34,11 +34,11 @@ class Describes:
 
     def __init__(self,
             git: Git, precache: bool=False,
-            precache_commits: Optional[List[str]]=None):
+            precache_commits: Optional[list[str]]=None):
         self.git = git
 
-        self.map_describes_commits: Optional[Dict[str, str]]
-        self.map_commits_describes: Optional[Dict[str, str]]
+        self.map_describes_commits: Optional[dict[str, str]]
+        self.map_commits_describes: Optional[dict[str, str]]
 
         if precache:
             describes_commits = self._get_describes_commits(precache_commits)
@@ -75,8 +75,8 @@ class Shorts:
 
     def _get_commit_shorts(
             self, shortlen: int,
-            commits: Optional[List[str]]=None
-    ) -> Generator[Tuple[str, str], None, None]:
+            commits: Optional[list[str]]=None
+    ) -> Generator[tuple[str, str], None, None]:
         if commits is None:
             commits = self.git.rev_list("--all")
 
@@ -85,16 +85,16 @@ class Shorts:
 
     def __init__(
             self, git: Git, precache: bool=False,
-            precache_commits: Optional[List[str]] = None,
+            precache_commits: Optional[list[str]] = None,
             precache_shortlen: int=8):
         self.git = git
 
-        self.precache: Dict[str, Optional[str]]
+        self.precache: dict[str, Optional[str]]
 
         if precache:
             keyvals = self._get_commit_shorts(precache_shortlen, precache_commits)
 
-            precache_: Dict[str, Optional[str]]
+            precache_: dict[str, Optional[str]]
             # don't resolve ambigious values (assign None to doubles)
             precache_ = {}
             for key, val in keyvals:
@@ -122,7 +122,7 @@ class Shorts:
 class Timestamps:
     """Class that maps git commits to timestamps"""
 
-    def _get_commit_timestamps(self) -> Generator[Tuple[str, int], None, None]:
+    def _get_commit_timestamps(self) -> Generator[tuple[str, int], None, None]:
         lines = self.git.rev_list("--pretty=format:%at", "--all")
         for i in range(0, len(lines), 2):
             commit = lines[i]
@@ -135,8 +135,8 @@ class Timestamps:
 
     def __init__(self, git: Git, precache: bool=False):
         self.git = git
-        self.precache: Dict[str, int] = {}
-        self.precache_commits: List[str] = []
+        self.precache: dict[str, int] = {}
+        self.precache_commits: list[str] = []
         if precache:
             commit_timestamps = self._get_commit_timestamps()
             for commit, timestamp in commit_timestamps:

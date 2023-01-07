@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import argparse
+from typing import NoReturn
 
 import autoversion_lib as autoversion
 from autoversion_lib import AutoverError
@@ -23,12 +24,13 @@ EXAMPLES = """Example usage:
 """
 
 
-def fatal(msg):
+def fatal(msg: str) -> NoReturn:
     print("error: " + str(msg), file=sys.stderr)
     sys.exit(1)
 
 
-def resolve_committish(git, committish):
+def resolve_committish(git: autoversion.Git,
+                       committish: str) -> str:
     # skip expensive git-rev-parse if given a full commit id
     if re.match("[0-9a-f]{40}$", committish):
         return committish
