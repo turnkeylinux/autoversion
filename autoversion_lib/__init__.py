@@ -202,7 +202,15 @@ class Autoversion:
             if commit:
                 return commit
 
-            raise AutoverError("illegal version `%s'" % version)
+            # look for describes that end with '/version'
+            for desc, commit in self.describes._get_describes_commits():
+                if (desc.endswith(f"/{version}")
+                    or desc.endswith(f"/v{version}")
+                    or desc.endswith(f"/V{version}")
+                ):
+                    return commit
+
+            raise AutoverError(f"illegal version `{version}'")
 
         year, month, day, hour, minu, sec, shortcommit = m.groups()
 
@@ -225,8 +233,17 @@ class Autoversion:
             elif not version[-1].isdigit():
                 version += "+0"
 
-            if version.startswith("v"):
+            if version.startswith("v") or version.startswith("V"):
                 return version[1:]
+            # if includes a slash, assume that it's debian style
+            # branch/tag handle (i.e. owner/tag or owner/ranch)
+            # Note '/' is illegal in pkg name, so uses greedy match
+            if '/' in version:
+                version = version.rsplit('/', 1)[-1]
+                if not version:
+                    raise AutoverError(
+                            "Illegal branchname for version generation:"
+                            f" {version}")
 
             return version
 
