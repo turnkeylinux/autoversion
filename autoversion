@@ -18,7 +18,8 @@ import autoversion_lib as autoversion
 from autoversion_lib import AutoverError
 
 EXAMPLES = """Example usage:
-    autoversion                         # print latest version (uses 'HEAD' by default)
+    autoversion                         # print latest version (uses 'HEAD' \
+by default)
     autoversion 9497a28                 # print version at commit ID 9497a28
     autoversion -r v1.0                 # print commit ID of version v1.0
     autoversion $(git-rev-list --all)   # print all versions
@@ -70,7 +71,8 @@ def main():
     if args.reverse:
         print(auto_ver.version2commit(args.commit))
     else:
-        print(auto_ver.commit2version(resolve_committish(auto_ver.git, args.commit)))
+        print(auto_ver.commit2version(
+            resolve_committish(auto_ver.git, args.commit)))
 
 
 if __name__ == "__main__":
