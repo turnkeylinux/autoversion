@@ -8,13 +8,31 @@
 # option) any later version.
 
 import re
-
+import os
 from time import gmtime
 from calendar import timegm
 import urllib.parse
+import logging
 from typing import Optional, Generator
 
 from gitwrapper import Git, GitError  # type: ignore
+
+logger = logging.getLogger('autoversion')
+level = os.getenv('AUTOVERSION_LOG_LEVEL', '').lower()
+if level == 'info':
+    loglevel = logging.INFO
+elif level == 'debug':
+    loglevel = logging.DEBUG
+elif level in ('', 'warn', 'warning'):
+    loglevel = logging.WARNING
+elif level in ('err', 'error', 'fatal'):
+    loglevel = logging.ERROR
+else:
+    loglevel = logging.WARNING
+logging.basicConfig(
+    format='%(asctime)s - [%(levelname)-7s] ' +
+           '%(filename)s:%(lineno)d %(message)s',
+    level=loglevel)
 
 
 class AutoverError(Exception):
@@ -175,9 +193,11 @@ class Autoversion:
                                    precache_commits=precache_commits)
 
         self.git = git
+        logger.debug(f'Inititialized Autoversion - self: {self}')
 
     def _resolve_ambigious_shortcommit(
             self, short: str, timestamp: int) -> str:
+        logger.debug(f'Resolving ambiguous short commit: {short} ({timestamp=})')
         if not self.timestamps.precache:
             self.timestamps = Timestamps(self.git, precache=True)
 
