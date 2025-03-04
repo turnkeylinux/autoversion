@@ -4,9 +4,9 @@ Map git commits to auto-versions and vice versa
 Features
 --------
 
-- Calculated versions are Debian compatible.
+- Calculated versions are Debian compatible and version sort as expected.
 
-- Supports named versions (e.g., "1.0") based on signed tags
+- Supports named versions (e.g., "1.0") based on annoted/signed tags.
 
 - Automatically calculates named version numbers for untagged commits
   that follow a tagged commit (e.g., "1.0+1+g873bc99")
@@ -14,6 +14,8 @@ Features
 - Supports anonymous date based versions (e.g.,
   "0+2015.2.13+09.03.03+38a2eec6") for untagged commits that precede any
   signed tags.
+
+
   
 Usage
 -----
@@ -130,4 +132,3 @@ Notes:
   
 * Untagged autoversion should always be evaluated by Debian package
   management as earlier than a tagged autoversion
-
