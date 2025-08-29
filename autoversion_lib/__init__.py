@@ -12,7 +12,7 @@ import re
 from time import gmtime
 from calendar import timegm
 import urllib.parse
-from typing import Optional, Generator
+from typing import Generator
 
 from gitwrapper import Git, GitError  # type: ignore
 
@@ -25,37 +25,41 @@ class Describes:
     """Class that maps git describes to git commits and vice versa"""
 
     def _get_describes_commits(
-            self, commits: Optional[list[str]] = None
-            ) -> list[tuple[str, str]]:
+            self,
+            commits: list[str] | None = None
+    ) -> list[tuple[str, str]]:
         if commits is None:
             commits = self.git.rev_list("--all")
 
-        describes = list(map(urllib.parse.unquote,
-                             self.git.describe(*commits)))
+        describes = list(
+                map(urllib.parse.unquote, self.git.describe(*commits))
+        )
         return list(zip(describes, commits))
 
-    def __init__(self,
-                 git: Git,
-                 precache: bool = False,
-                 precache_commits: Optional[list[str]] = None
-                 ):
+    def __init__(
+            self,
+            git: Git,
+            precache: bool = False,
+            precache_commits: list[str] | None = None
+    ):
         self.git = git
 
-        self.map_describes_commits: Optional[dict[str, str]]
-        self.map_commits_describes: Optional[dict[str, str]]
+        self.map_describes_commits: dict[str, str] | None
+        self.map_commits_describes: dict[str, str] | None
 
         if precache:
             describes_commits = self._get_describes_commits(precache_commits)
             self.map_describes_commits = dict(describes_commits)
             self.map_commits_describes = dict(
-                    ((v[1], v[0]) for v in describes_commits))
+                    ((v[1], v[0]) for v in describes_commits)
+            )
         else:
             self.map_describes_commits = None
             self.map_commits_describes = None
 
         self.precache = precache
 
-    def describe2commit(self, describe: str) -> Optional[str]:
+    def describe2commit(self, describe: str) -> str | None:
         if self.precache:
             assert self.map_describes_commits is not None
             commit = self.map_describes_commits.get(describe)
@@ -63,7 +67,7 @@ class Describes:
             commit = self.git.rev_parse(describe)
         return commit
 
-    def commit2describe(self, commit: str) -> Optional[str]:
+    def commit2describe(self, commit: str) -> str | None:
         if self.precache:
             assert self.map_commits_describes is not None
             return self.map_commits_describes.get(commit)
@@ -79,8 +83,9 @@ class Shorts:
     """Class that maps short-commits to commits"""
 
     def _get_commit_shorts(
-            self, shortlen: int,
-            commits: Optional[list[str]] = None
+            self,
+            shortlen: int,
+            commits: list[str] | None = None
     ) -> Generator[tuple[str, str], None, None]:
         if commits is None:
             commits = self.git.rev_list("--all")
@@ -89,18 +94,21 @@ class Shorts:
             yield commit[:shortlen], commit
 
     def __init__(
-            self, git: Git, precache: bool = False,
-            precache_commits: Optional[list[str]] = None,
-            precache_shortlen: int = 8):
+            self,
+            git: Git,
+            precache: bool = False,
+            precache_commits: list[str] | None = None,
+            precache_shortlen: int = 8
+    ):
         self.git = git
 
-        self.precache: dict[str, Optional[str]]
+        self.precache: dict[str, str | None]
 
         if precache:
             keyvals = self._get_commit_shorts(
-                    precache_shortlen, precache_commits)
-
-            precache_: dict[str, Optional[str]]
+                    precache_shortlen, precache_commits
+            )
+            precache_: dict[str, str | None]
             # don't resolve ambigious values (assign None to doubles)
             precache_ = {}
             for key, val in keyvals:
@@ -112,7 +120,7 @@ class Shorts:
         else:
             self.precache = {}
 
-    def short2commit(self, short: str) -> Optional[str]:
+    def short2commit(self, short: str) -> str | None:
         """map a short commit to a commit.
         Returns None if a one-to-one mapping does not exist (I.e., non-existant
         or ambigious)
@@ -165,19 +173,24 @@ class Autoversion:
         try:
             git = Git(path)
         except GitError as e:
-            raise AutoverError(f"failed to initialize gitwrapper: {e}") from e
+            raise AutoverError(f"failed to initialize gitwrapper: {e}")
 
         self.timestamps = Timestamps(git, precache)
         precache_commits = self.timestamps.precache_commits
 
         self.shorts = Shorts(git, precache, precache_commits=precache_commits)
-        self.describes = Describes(git, precache,
-                                   precache_commits=precache_commits)
-
+        self.describes = Describes(
+                git,
+                precache,
+                precache_commits=precache_commits
+        )
         self.git = git
 
     def _resolve_ambigious_shortcommit(
-            self, short: str, timestamp: int) -> str:
+            self,
+            short: str,
+            timestamp: int
+    ) -> str:
         if not self.timestamps.precache:
             self.timestamps = Timestamps(self.git, precache=True)
 
@@ -213,9 +226,11 @@ class Autoversion:
 
             # look for describes that end with '/version'
             for desc, commit in self.describes._get_describes_commits():
-                if (desc.endswith(f"/{version}")
+                if (
+                        desc.endswith(f"/{version}")
                         or desc.endswith(f"/v{version}")
-                        or desc.endswith(f"/V{version}")):
+                        or desc.endswith(f"/V{version}")
+                ):
                     return commit
 
             raise AutoverError(f"illegal version `{version}'")
@@ -246,17 +261,18 @@ class Autoversion:
             # if includes a slash, assume that it's debian style
             # branch/tag handle (i.e. owner/tag or owner/ranch)
             # Note '/' is illegal in pkg name, so uses greedy match
-            if '/' in version:
-                version = version.rsplit('/', 1)[-1]
+            if "/" in version:
+                version = version.rsplit("/", 1)[-1]
                 if not version:
                     raise AutoverError(
                             "Illegal branchname for version generation:"
-                            f" {version}")
+                            f" {version}"
+                    )
 
             return version
 
         tm = gmtime(self.timestamps.commit2timestamp(commit))
-        return "0+{}.{}.{}+{:02d}.{:02d}.{:02d}+{}" "".format(
+        return "0+{}.{}.{}+{:02d}.{:02d}.{:02d}+{}".format(
             tm.tm_year,
             tm.tm_mon,
             tm.tm_mday,
