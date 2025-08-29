@@ -41,7 +41,7 @@ class Describes:
             git: Git,
             precache: bool = False,
             precache_commits: list[str] | None = None
-    ):
+    ) -> None:
         self.git = git
 
         self.map_describes_commits: dict[str, str] | None
@@ -99,7 +99,7 @@ class Shorts:
             precache: bool = False,
             precache_commits: list[str] | None = None,
             precache_shortlen: int = 8
-    ):
+    ) -> None:
         self.git = git
 
         self.precache: dict[str, str | None]
@@ -147,7 +147,7 @@ class Timestamps:
 
             yield commit, timestamp
 
-    def __init__(self, git: Git, precache: bool = False):
+    def __init__(self, git: Git, precache: bool = False) -> None:
         self.git = git
         self.precache: dict[str, int] = {}
         self.precache_commits: list[str] = []
@@ -169,7 +169,7 @@ class Timestamps:
 
 
 class Autoversion:
-    def __init__(self, path: str, precache: bool = False):
+    def __init__(self, path: str, precache: bool = False) -> None:
         try:
             git = Git(path)
         except GitError as e:
