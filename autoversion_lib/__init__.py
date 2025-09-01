@@ -173,7 +173,7 @@ class Autoversion:
         try:
             git = Git(path)
         except GitError as e:
-            raise AutoverError(f"failed to initialize gitwrapper: {e}")
+            raise AutoverError(f"failed to initialize gitwrapper: {e}") from e
 
         self.timestamps = Timestamps(git, precache)
         precache_commits = self.timestamps.precache_commits
