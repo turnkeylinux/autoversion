@@ -26,8 +26,8 @@ by default)
 """
 
 
-def fatal(msg: str) -> NoReturn:
-    print("error: " + str(msg), file=sys.stderr)
+def fatal(msg: str | AutoverError) -> NoReturn:
+    print(f"error: {msg}", file=sys.stderr)
     sys.exit(1)
 
 
@@ -58,10 +58,10 @@ def main():
     )
     parser.add_argument(
         "commit",
-        nargs='?',
-        default='HEAD',
-        help=("any revision supported by git (e.g. commit ids, tags, refs,"
-              "etc.) Default if not set: HEAD"),
+        nargs="?",
+        default="HEAD",
+        help="any revision supported by git (e.g. commit ids, tags, refs,"
+             " etc.) Default if not set: HEAD",
     )
     args = parser.parse_args()
     try:
