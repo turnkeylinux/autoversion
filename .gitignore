@@ -1,7 +1,25 @@
+# cached dev files
+**/__pycache__/
+.mypy_cache/
+.ruff_cache/
+**/*.swp
+
+# python build assets
+.pybuild/
+build/
+*.egg-info/
+
+# deb package build assests
+debian/autoversion/
+
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/*.debhelper.log
+debian/*.debhelper
+debian/*.substvars
+debian/files
+
+# other files/dirs
 tmp
-*.pyc
-*.pyo
-*.tar.bz2
 tags
-build
-__pycache__
+*.tar.bz2
